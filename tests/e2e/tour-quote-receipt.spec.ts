@@ -6,7 +6,7 @@ const tour = catalog.tours.find(item => item.priceUSD > 0)!;
 async function fillQuoteForm(page: import('@playwright/test').Page) {
   await page.addInitScript(() => { if (window === window.top) localStorage.setItem('cookie-consent', 'essential'); });
   await page.goto('/tour/' + tour.id);
-  await page.getByTestId('tour-cta').getByRole('button', { name: 'Cotizar / Reservar' }).click();
+  await page.getByTestId('tour-cta').getByRole('button', { name: /^(Solicitar cotización|Cotizar \/ Reservar)$/ }).click();
   const form = page.getByRole('form', { name: 'Solicitar cotización' });
   await form.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Viajero Prueba');
   await form.getByLabel('Correo electrónico').fill('viajero@example.com');

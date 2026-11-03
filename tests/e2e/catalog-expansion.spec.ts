@@ -26,7 +26,7 @@ for (const language of ['es', 'en'] as const) {
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(es ? tour.titleEs : tour.titleEn);
         await expect(page.getByText(es ? 'Revisado por nuestro equipo el 2026-10-22' : 'Reviewed by our team on 2026-10-22')).toBeVisible();
         const cta = page.getByTestId(width < 768 ? 'tour-cta-mobile' : 'tour-cta');
-        await cta.getByRole('button', { name: es ? 'Cotizar / Reservar' : 'Get a quote / Book' }).click();
+        await cta.getByRole('button', { name: es ? /^(Solicitar cotización|Cotizar \/ Reservar)$/ : /^(Request a quote|Get a quote \/ Book)$/ }).click();
         const form = page.getByRole('form', { name: es ? 'Solicitar cotización' : 'Request a quote' });
         await form.getByRole('textbox').first().fill('Catalog QA');
         await form.locator('input[type="email"]').fill('catalog@example.com');

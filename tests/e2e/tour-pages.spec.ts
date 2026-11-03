@@ -58,7 +58,8 @@ const priceText = { es: `desde US$${Math.round(tour.priceUSD).toLocaleString('en
 
 for (const language of ['es', 'en'] as const) {
   const es = language === 'es';
-  const cta = es ? 'Cotizar / Reservar' : 'Get a quote / Book';
+  // #510: los tours solo de cotización dicen 'Solicitar cotización' / 'Request a quote'; los reservables, 'Cotizar / Reservar'.
+  const cta = es ? /^(Solicitar cotización|Cotizar \/ Reservar)$/ : /^(Request a quote|Get a quote \/ Book)$/;
   const submit = es ? 'Enviar solicitud' : 'Send request';
 
   test.describe(`tour quote CTA ${language}`, () => {
@@ -73,7 +74,7 @@ for (const language of ['es', 'en'] as const) {
       await expect(block.getByTestId('tour-cta-price')).toHaveText(priceText[language]);
       await expect(block).toContainText(es ? 'sujeto a confirmación' : 'subject to confirmation');
       await expect(page.getByTestId('tour-cta-mobile')).toBeHidden();
-      await block.getByRole('button', { name: cta, exact: true }).click();
+      await block.getByRole('button', { name: cta }).click();
       const form = page.getByRole('form', { name: es ? 'Solicitar cotización' : 'Request a quote' });
       await expect(form).toBeInViewport();
       await expect(form.getByRole('textbox').first()).toBeFocused();
@@ -95,7 +96,7 @@ for (const language of ['es', 'en'] as const) {
       const barBox = (await bar.boundingBox())!;
       const bannerBox = (await banner.boundingBox())!;
       expect(barBox.y + barBox.height).toBeLessThanOrEqual(bannerBox.y + 1);
-      await bar.getByRole('button', { name: cta, exact: true }).click();
+      await bar.getByRole('button', { name: cta }).click();
       const form = page.getByRole('form', { name: es ? 'Solicitar cotización' : 'Request a quote' });
       await expect(form).toBeInViewport();
       await expect(bar).toBeHidden();

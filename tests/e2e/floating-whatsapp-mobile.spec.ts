@@ -1,8 +1,9 @@
 import { expect, mockApi, test } from './fixtures';
 
-// BottomNav no tiene data-testid (y no se modifica): se ubica por su rol y nombre accesible.
+// BottomNav no tiene data-testid (y no se modifica). El Header usa el mismo nombre accesible, así que
+// se ubica por su contenedor fijo inferior (lg:hidden fixed bottom-3).
 const bottomNav = (page: import('@playwright/test').Page) =>
-  page.getByRole('navigation', { name: /^(Navegación principal|Primary navigation)$/ });
+  page.locator('div.lg\\:hidden.fixed.bottom-3 > nav');
 
 test('floating WhatsApp is mobile-only and does not cover BottomNav at 375px', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });

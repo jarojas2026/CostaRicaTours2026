@@ -36,7 +36,7 @@ for (const viewport of VIEWPORTS) {
     const useSticky = await page.getByTestId('tour-cta-mobile').isVisible();
     const cta = useSticky ? page.getByTestId('tour-cta-mobile') : page.getByTestId('tour-cta');
     await expect(cta).toBeVisible();
-    await cta.getByRole('button', { name: /Cotizar \/ Reservar|Get a quote \/ Book/ }).click();
+    await cta.getByRole('button', { name: /^(Solicitar cotización|Cotizar \/ Reservar|Request a quote|Get a quote \/ Book)$/ }).click();
 
     const form = page.getByRole('form', { name: /Solicitar cotización|Request a quote/ });
     await expect(form).toBeInViewport();
