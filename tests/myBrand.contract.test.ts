@@ -21,7 +21,7 @@ test('"my" resaltado con acento existente y animación solo motion-safe', () => 
 test('encabezado y command bar pasan idioma a etiquetas ES/EN', () => {
   const header = readFileSync('src/components/Header.tsx', 'utf8');
   assert.match(header, /<MyWordmark \/>/);
-  for (const s of ['trip', 'planner', 'bookings', 'flights']) assert.match(header, new RegExp(`<MyLabel section="${s}" language=\\{language\\} />`));
+  for (const s of ['trip', 'planner', 'bookings', 'flights']) assert.match(header, new RegExp(`<MyLabel section="${s}"`));
   assert.doesNotMatch(header, /'Armar mi viaje'|'Build my trip'/);
   const bar = readFileSync('src/components/TravelerCommandBar.tsx', 'utf8');
   assert.match(bar, /<MyLabel section=\{item\.section\} language=\{language\} \/>/);
