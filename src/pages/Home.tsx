@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { HeroSection } from '../components/HeroSection';
 import { HomeQuickNav } from '../components/HomeQuickNav';
 import { DigitalCityGateway } from '../components/DigitalCityGateway';
+import { SHOW_DIGITAL_CITY } from '../config/featureFlags';
 import { DigitalCityAudienceHub } from '../components/DigitalCityAudienceHub';
 import { DigitalCityServiceJourney } from '../components/DigitalCityServiceJourney';
 import { CategoriesSection } from '../components/CategoriesSection';
@@ -80,10 +81,14 @@ export const Home: React.FC<HomeProps> = ({
       <OperationalTrustNotice language={language} />
       <div className="mx-auto w-full max-w-7xl px-4"><TravelPreparationEntry language={language} region={selectedRegion} activity={selectedCategory}/></div>
 
-      {/* Connected city masterplan entrance: complements the travel-first navigation. */}
-      <DigitalCityGateway language={language} />
-      <DigitalCityAudienceHub language={language} compact />
-      <DigitalCityServiceJourney language={language} />
+      {/* Connected city masterplan entrance: oculta por bandera (VITE_SHOW_DIGITAL_CITY=true la muestra). */}
+      {SHOW_DIGITAL_CITY && (
+        <>
+          <DigitalCityGateway language={language} />
+          <DigitalCityAudienceHub language={language} compact />
+          <DigitalCityServiceJourney language={language} />
+        </>
+      )}
 
       {/* Costa Rica Pulse — visual destination/weather inspiration */}
       <DestinationPulse

@@ -10,6 +10,7 @@ import { fetchExchangeRates } from './utils/i18n';
 import { getRatesSnapshot } from './utils/exchangeRates';
 import { availableCurrencies } from './utils/money';
 import { getInitialCurrency, getInitialLanguage, rememberCurrency, rememberLanguage } from './i18n';
+import { setCurrentUiLanguage } from './i18n/currentUiLanguage';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { AmbientBackground } from './components/AmbientBackground';
@@ -84,6 +85,8 @@ export default function App() {
   // selectors is saved and wins on later visits.
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);
   const [currency, setCurrencyState] = useState<Currency>(getInitialCurrency);
+  // Las etiquetas "Mi/My" del Header leen este valor (Header no se modifica): se fija antes de renderizar hijos.
+  setCurrentUiLanguage(language);
   const setLanguage = useCallback((next: Language) => {
     setLanguageState(next);
     rememberLanguage(next);

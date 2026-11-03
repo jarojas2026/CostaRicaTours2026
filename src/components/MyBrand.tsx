@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Language } from '../types';
+import { getCurrentUiLanguage } from '../i18n/currentUiLanguage';
 
 /**
  * Sistema de marca "my" (#399). Solo UI: no cambia dominio, URLs canónicas ni SEO.
@@ -32,8 +33,9 @@ export const MyWordmark: React.FC = () => (
 );
 
 /** Etiqueta de sección del viajero localizada (ES/EN), sin alterar el wordmark comercial. */
-export const MyLabel: React.FC<{ section: MySection; language?: Language }> = ({ section, language = 'en' }) => {
-  const es = language === 'es';
+export const MyLabel: React.FC<{ section: MySection; language?: Language }> = ({ section, language }) => {
+  // Sin prop (Header), usa el idioma activo de la interfaz que fija App.
+  const es = (language ?? getCurrentUiLanguage()) === 'es';
   const item = MY_SECTIONS[section];
   const prefix = es ? (section === 'bookings' || section === 'flights' ? 'Mis' : 'Mi') : 'My';
   return (

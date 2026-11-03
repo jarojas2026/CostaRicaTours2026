@@ -160,6 +160,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
   const [fallbackContactEmail, setFallbackContactEmail] = useState('');
   const [fallbackContactMessage, setFallbackContactMessage] = useState('');
   const [fallbackContactStatus, setFallbackContactStatus] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  const [fallbackContactConsent, setFallbackContactConsent] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(false);
   const [aiEngine, setAiEngine] = useState<'claude' | 'gemini'>('claude');
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState(false);
@@ -424,7 +425,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
     const message = fallbackContactMessage.trim();
     const name = fallbackContactName.trim();
     const email = fallbackContactEmail.trim();
-    if (!message || !name || !email) return;
+    if (!message || !name || !email || !fallbackContactConsent) return;
 
     setFallbackContactStatus('sending');
     requestCustomerIntake({
@@ -432,6 +433,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
       language,
       source: 'ai-assistant-unavailable',
       customer: { name, email },
+      consent: true,
       onResult: (result) => setFallbackContactStatus(result.ok ? 'sent' : 'failed'),
     });
   };
@@ -998,6 +1000,19 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
                                 onChange={(event) => setFallbackContactMessage(event.target.value)}
                                 className="w-full rounded-lg border border-emerald-500/30 bg-[#051c14] px-3 py-2 text-white"
                               />
+                            </label>
+                            <label className="flex items-start gap-2 text-[11px] text-emerald-100">
+                              <input
+                                type="checkbox"
+                                required
+                                data-testid="ai-fallback-consent"
+                                checked={fallbackContactConsent}
+                                onChange={(event) => setFallbackContactConsent(event.target.checked)}
+                                className="mt-0.5"
+                              />
+                              <span>{language === 'es'
+                                ? 'Acepto que Costa Rica Tours use mi nombre y correo para responder esta consulta (Ley 8968).'
+                                : 'I agree that Costa Rica Tours may use my name and email to answer this inquiry (Law 8968).'}</span>
                             </label>
                             <button
                               type="submit"

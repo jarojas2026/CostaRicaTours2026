@@ -43,6 +43,8 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
   const [liveWeather, setLiveWeather] = useState<Record<string, Weather>>({});
   const [weatherState, setWeatherState] = useState<'loading' | 'available' | 'unavailable'>('loading');
   const es = language === 'es';
+  // Sin datos de ninguna región: una sola nota en lugar de repetir "Clima no disponible" en cada tarjeta.
+  const weatherUnavailable = weatherState === 'unavailable';
 
   useEffect(() => {
     const controller = new AbortController();
@@ -124,7 +126,10 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
             const rain = weather ? Math.round(weather.precipitationProbability) : null;
             const condition = weather
               ? (es ? weather.labelEs : weather.labelEn)
-              : (es ? 'Clima no disponible' : 'Weather unavailable');
+              : weatherState === 'available'
+                ? (es ? 'Clima no disponible' : 'Weather unavailable')
+                : (es ? card.moodEs : card.moodEn);
+            const showWeatherFigures = Boolean(weather) || weatherState === 'available';
 
             return (
               <motion.button
@@ -169,6 +174,7 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
                   </div>
 
                   <div className="flex shrink-0 items-center gap-4 sm:gap-7">
+                    {showWeatherFigures && (<>
                     <div className="hidden text-right sm:block">
                       <div className="text-[9px] font-black uppercase tracking-wider text-white/60">
                         {es ? 'Sensación' : 'Feels like'}
@@ -183,6 +189,7 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
                         {humidity === null || rain === null ? (es ? 'Datos no disponibles' : 'Data unavailable') : `${humidity}% · ${rain}% ${es ? 'lluvia' : 'rain'}`}
                       </div>
                     </div>
+                    </>)}
                     <ArrowRight className={'h-5 w-5 text-white/70 transition-transform ' + (selected ? 'translate-x-1 text-white' : 'group-hover:translate-x-1')} />
                   </div>
                 </div>
@@ -201,6 +208,13 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
           })}
         </div>
 
+        {weatherUnavailable ? (
+          <p data-testid="destination-pulse-weather-unavailable" role="status" className="mt-4 rounded-[24px] border border-white/80 bg-white/70 p-4 text-sm font-medium text-sky-950/75 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+            {es
+              ? 'Clima no disponible por ahora. Puedes explorar los destinos igual; consulta fuentes meteorológicas oficiales antes de viajar.'
+              : 'Weather is not available right now. You can still explore destinations; check official weather sources before you travel.'}
+          </p>
+        ) : (
         <motion.div
           key={active.id}
           initial={{ opacity: 0, y: 8 }}
@@ -232,6 +246,7 @@ export const DestinationPulse: React.FC<DestinationPulseProps> = ({ language, on
             <div className="mt-1 truncate text-sm font-bold text-sky-950">{es ? active.moodEs : active.moodEn}</div>
           </div>
         </motion.div>
+        )}
       </div>
     </section>
   );
