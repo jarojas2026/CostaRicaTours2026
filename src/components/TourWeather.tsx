@@ -43,6 +43,9 @@ function dayLabel(date: string, es: boolean): string {
  * Pronóstico de 3–5 días para la ubicación de referencia del tour (Open-Meteo vía backend, caché 1 h).
  * Falla en silencio: si el servicio no responde, la sección no se muestra.
  */
+/** El aviso de clima no disponible va en el home (DestinationPulse); en el detalle del tour se oculta. */
+export const SHOW_TOUR_WEATHER_UNAVAILABLE_NOTICE = false as boolean;
+
 export function TourWeather({ lat, lng, language }: { lat: number; lng: number; language: Language }) {
   const [days, setDays] = useState<ForecastDay[] | null>(null);
   const [forecastState, setForecastState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
@@ -79,6 +82,8 @@ export function TourWeather({ lat, lng, language }: { lat: number; lng: number; 
 
   if (forecastState === 'loading') return null;
   if (forecastState === 'unavailable') {
+    // Detalle del tour: silencioso por defecto (como antes de #509); el aviso queda detrás de la bandera.
+    if (!SHOW_TOUR_WEATHER_UNAVAILABLE_NOTICE) return null;
     return (
       <section data-testid="tour-weather-unavailable" aria-label={es ? 'Pronóstico no disponible' : 'Forecast unavailable'} className="rounded-2xl border border-white/10 bg-stone-950/30 p-4">
         <h2 className="text-lg font-bold text-white">{es ? 'Pronóstico temporalmente no disponible' : 'Forecast temporarily unavailable'}</h2>

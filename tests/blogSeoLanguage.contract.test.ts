@@ -24,8 +24,8 @@ test('blog head emits ES/EN hreflang alternates and x-default, not untranslated 
 });
 
 test('blog source contains Spanish title, excerpt, article sections and image alt', () => {
-  assert.match(blogData, /title: Bi/);
-  assert.match(blogData, /excerpt: Bi/);
-  assert.match(blogData, /heading: Bi/);
-  assert.match(blogData, /imageAlt: Bi/);
+  assert.match(blogData, /title: \{\s*es:/);
+  assert.match(blogData, /excerpt: \{\s*es:/);
+  assert.match(blogData, /heading: \{\s*es:/);
+  assert.match(blogData, /imageAlt: \{\s*es:/);
 });

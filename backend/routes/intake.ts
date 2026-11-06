@@ -17,6 +17,20 @@ import { understandConciergeMessage } from '../conciergeUnderstanding';
 import { TOURS } from '../../src/data/toursData';
 import { contactFormGuard } from '../formAbuseGuard';
 
+/**
+ * Consentimiento expreso (Ley 8968) para guardar el contacto del lead. Acepta `consent: true` /
+ * `privacyConsent: true` arriba y también el formato que ya mandan los formularios con casilla
+ * (`consent: { given: true }` o `context.consent.given === true`, p. ej. CustomFunnelModal).
+ * Sin casilla marcada, el contacto del lead se sigue redactando.
+ */
+export function hasExplicitIntakeConsent(body: any): boolean {
+  if (!body || typeof body !== 'object') return false;
+  if (body.consent === true || body.privacyConsent === true) return true;
+  if (body.consent && typeof body.consent === 'object' && body.consent.given === true) return true;
+  const contextConsent = body.context && typeof body.context === 'object' ? body.context.consent : undefined;
+  return Boolean(contextConsent && typeof contextConsent === 'object' && contextConsent.given === true);
+}
+
 /** Customer intake y webhooks de WhatsApp. */
 export const customerIntakeRouter = createRouter();
 
@@ -43,7 +57,7 @@ customerIntakeRouter.post('/api/customer-intake', chatLimiter, contactFormGuard,
         understanding: understandConciergeMessage(intakeMessage, TOURS, { requestedLanguage: req.body?.language || req.body?.idioma }),
         message: intakeMessage,
         sessionId: /^web_[A-Za-z0-9-]{8,80}$/.test(requestedSessionId) ? requestedSessionId : undefined,
-        consent: req.body?.consent === true || req.body?.privacyConsent === true,
+        consent: hasExplicitIntakeConsent(req.body),
         contact: req.body?.customer && typeof req.body.customer === 'object'
           ? { name: req.body.customer.name || req.body.customer.fullName, email: req.body.customer.email, phone: req.body.customer.phone || req.body.customer.whatsapp }
           : null,

@@ -4,6 +4,7 @@ import { Language } from '../types';
 import { whatsappInquiryUrl } from '../utils/directWhatsApp';
 import { createT } from '../i18n';
 import { Phone, MapPin, Mail, ShieldCheck, Heart, Globe, Sparkles, MessageCircle, Lock, CreditCard, ChevronRight } from 'lucide-react';
+import { SHOW_DIGITAL_CITY } from '../config/featureFlags';
 
 interface FooterProps {
   language: Language;
@@ -92,6 +93,23 @@ export const Footer: React.FC<FooterProps> = ({ language }) => {
                   {t('footer.destinations')}
                 </Link>
               </li>
+              {/* Enlaces de Digital City: se conservan, ocultos salvo VITE_SHOW_DIGITAL_CITY=true. */}
+              {SHOW_DIGITAL_CITY && (
+                <>
+                  <li>
+                    <Link to="/ciudad" className="hover:text-amber-400 transition-colors flex items-center gap-2 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+                      <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                      {t('footer.digitalCityMasterplan')}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/participar" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
+                      <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />
+                      {t('footer.joinDigitalCity')}
+                    </Link>
+                  </li>
+                </>
+              )}
               <li>
                 <Link to="/itinerary" className="hover:text-amber-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="w-3 h-3 text-emerald-500 group-hover:text-amber-400" />

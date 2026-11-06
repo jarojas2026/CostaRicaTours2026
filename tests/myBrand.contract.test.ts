@@ -21,7 +21,8 @@ test('"my" resaltado con acento existente y animación solo motion-safe', () => 
 test('encabezado y command bar pasan idioma a etiquetas ES/EN', () => {
   const header = readFileSync('src/components/Header.tsx', 'utf8');
   assert.match(header, /<MyWordmark \/>/);
-  for (const s of ['trip', 'planner', 'bookings', 'flights']) assert.match(header, new RegExp(`<MyLabel section="${s}"`));
+  // Header no se modifica: sus etiquetas no reciben prop y toman el idioma activo de la interfaz.
+  for (const s of ['trip', 'planner', 'bookings', 'flights']) assert.match(header, new RegExp(`<MyLabel section="${s}" />`));
   assert.doesNotMatch(header, /'Armar mi viaje'|'Build my trip'/);
   const bar = readFileSync('src/components/TravelerCommandBar.tsx', 'utf8');
   assert.match(bar, /<MyLabel section=\{item\.section\} language=\{language\} \/>/);
@@ -32,4 +33,19 @@ test('encabezado y command bar pasan idioma a etiquetas ES/EN', () => {
 test('no toca dominio, canónicas ni SEO', () => {
   const brand = readFileSync('src/components/MyBrand.tsx', 'utf8');
   assert.doesNotMatch(brand, /canonical|https?:\/\/|<link|hreflang/);
+});
+
+test('MyLabel sin prop usa el idioma activo que fija App (Header en español muestra Mi/Mis)', async () => {
+  const React = (await import('react')).default;
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { MyLabel } = await import('../src/components/MyBrand');
+  const { setCurrentUiLanguage } = await import('../src/i18n/currentUiLanguage');
+  const app = readFileSync('src/App.tsx', 'utf8');
+  assert.match(app, /setCurrentUiLanguage\(language\);/);
+  setCurrentUiLanguage('es');
+  assert.match(renderToStaticMarkup(React.createElement(MyLabel, { section: 'bookings' })), /aria-label="Mis reservas"/);
+  assert.match(renderToStaticMarkup(React.createElement(MyLabel, { section: 'trip' })), /aria-label="Mi viaje"/);
+  setCurrentUiLanguage('en');
+  assert.match(renderToStaticMarkup(React.createElement(MyLabel, { section: 'trip' })), /aria-label="My Trip"/);
+  assert.match(renderToStaticMarkup(React.createElement(MyLabel, { section: 'trip', language: 'es' })), /aria-label="Mi viaje"/, 'la prop explícita gana');
 });

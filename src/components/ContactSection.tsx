@@ -16,6 +16,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
   const [phone,setPhone]=useState('');
   const [subject,setSubject]=useState('Consulta de disponibilidad');
   const [message,setMessage]=useState('');
+  const [consent,setConsent]=useState(false);
   const [status,setStatus]=useState('');
   const [startedAt]=useState(()=>Date.now());
   const [honeypot,setHoneypot]=useState('');
@@ -29,6 +30,8 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
       source:'contact-form',
       ...formGuardFields(startedAt,honeypot),
       customer:{name,email,phone},
+      // Casilla opcional (Ley 8968): con ella el lead conserva nombre, correo y teléfono.
+      consent,
       onResult: result => setStatus(result.ok
         ? (language==='es' ? `Consulta recibida.${result.intakeId ? ` Número de seguimiento: ${result.intakeId}` : ''}` : `Inquiry received.${result.intakeId ? ` Reference: ${result.intakeId}` : ''}`)
         : (language==='es' ? 'No se pudo enviar la consulta. No se notificó al equipo; puedes continuar por WhatsApp.' : 'The inquiry could not be sent. The team was not notified; you can continue on WhatsApp.'))
@@ -146,6 +149,13 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ language }) => {
                 placeholder={language === 'es' ? 'Cuéntanos tu plan...' : 'Tell us your plan...'} value={message} onChange={e=>setMessage(e.target.value)}
               />
             </div>
+
+            <label className="flex items-start gap-3 text-xs text-stone-400 ml-4">
+              <input type="checkbox" data-testid="contact-consent" checked={consent} onChange={e=>setConsent(e.target.checked)} className="mt-0.5" />
+              <span>{language === 'es'
+                ? 'Acepto que Costa Rica Tours guarde mis datos de contacto para responder y dar seguimiento a mi consulta (Ley 8968).'
+                : 'I agree that Costa Rica Tours may keep my contact details to answer and follow up on my inquiry (Law 8968).'}</span>
+            </label>
 
             <button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black py-5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:translate-y-0">
               <Send className="w-5 h-5" />

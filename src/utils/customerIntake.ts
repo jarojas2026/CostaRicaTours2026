@@ -6,6 +6,8 @@ export interface CustomerIntakeRequest {
   source?: string;
   sessionId?: string;
   customer?: { name?: string; email?: string; phone?: string };
+  /** Consentimiento expreso (Ley 8968) marcado por el cliente para guardar su contacto en el lead. */
+  consent?: boolean;
   context?: Record<string, any>;
   /** Antiabuso (shared/formAbuse): honeypot y marca de tiempo del formulario. */
   website?: string;
