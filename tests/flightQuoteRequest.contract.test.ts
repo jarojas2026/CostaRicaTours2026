@@ -17,7 +17,10 @@ test('flight quote extras are opt-in and default unchecked', () => {
 test('flight modal submits a quote request without card checkout or payment initiation', () => {
   assert.match(modal, /Request a quote|Solicitar cotización/);
   assert.match(modal, /fetch\('\/api\/bookings'/);
-  assert.doesNotMatch(modal, /create-checkout-session|paymentMethod === 'credit_card'/);
+  // Stripe se conserva detrás de una bandera apagada (regla: no borrar código, desactivar).
+  assert.match(modal, /export const FLIGHT_ONLINE_PAYMENT_ENABLED = false as boolean;/);
+  assert.match(modal, /if \(FLIGHT_ONLINE_PAYMENT_ENABLED && paymentMethod === 'credit_card'\)/);
+  assert.doesNotMatch(modal, /id: 'credit_card'/);
   assert.doesNotMatch(modal, /Credit Card|Tarjeta de crédito/i);
   assert.match(modal, /paymentMethod: 'pay_at_pickup'/);
   assert.match(modal, /status: 'solicitada'/);

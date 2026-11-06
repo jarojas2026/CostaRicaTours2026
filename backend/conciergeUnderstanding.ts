@@ -476,7 +476,7 @@ export function deterministicConciergeReply(u: ConciergeUnderstanding): string |
       const dayLabel = u.understood.days ? (es ? `Día ${index + 1}: ` : `Day ${index + 1}: `) : '';
       parts.push(`• ${dayLabel}${s.title}${s.referenceLine ? ` — ${s.referenceLine}` : ''}`);
     });
-    if (u.understood.days > 14) {
+    if ((u.understood.days ?? 0) > 14) {
       parts.push(es
         ? 'Por claridad, esta respuesta muestra hasta 14 experiencias; es un límite de presentación, no una afirmación de que el catálogo tenga solo 14.'
         : 'For clarity, this response displays up to 14 experiences; this is a presentation limit, not a claim that the catalogue has only 14.' );

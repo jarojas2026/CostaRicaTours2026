@@ -99,7 +99,7 @@ for (const deviceName of ['iPhone 13', 'Pixel 7'] as const) {
       const posts: string[] = [];
       page.on('request', (r) => { if (r.method() === 'POST' && r.url().includes('/api/')) posts.push(new URL(r.url()).pathname); });
       await page.goto(`/tour/${tour.id}`);
-      await page.getByTestId('tour-cta-mobile').getByRole('button', { name: 'Cotizar / Reservar', exact: true }).tap();
+      await page.getByTestId('tour-cta-mobile').getByRole('button', { name: /^(Solicitar cotización|Cotizar \/ Reservar)$/ }).tap();
       const form = page.getByRole('form', { name: 'Solicitar cotización' });
       await expect(form).toBeInViewport();
       await form.getByLabel('Nombre', { exact: true }).fill('Prueba Móvil');
