@@ -27,7 +27,7 @@
     "@sentry/node": "^11.7.0",
     "@sentry/react": "^11.8.0",
     "@stripe/stripe-js": "^10.1.0",
-    "@tailwindcss/vite": "^4.1.14",
+    "@tailwindcss/vite": "^4.3.4",
     "@types/express": "^5.0.6",
     "@types/google.maps": "^3.66.7",
     "@types/leaflet": "^1.9.22",
@@ -59,12 +59,12 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.18.4",
+    "react-router-dom": "^7.18.5",
     "stripe": "^22.6.0",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.23.15",
-    "vite": "^6.4.4",
+    "vite": "^6.4.5",
     "vite-plugin-pwa": "^1.3.0"
   },
   "devDependencies": {
