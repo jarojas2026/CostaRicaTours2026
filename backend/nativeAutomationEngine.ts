@@ -910,7 +910,7 @@ export async function executeAutonomousMultiDayPlanner(body: any) {
       nivelPresupuesto: params.presupuestoNivel || 'confort_premium'
     },
     transporteOficial: {
-      proveedor: 'Traslados privados o compartidos coordinados por nuestra agencia (tarifa de referencia, sujeta a confirmación)',
+      proveedor: 'Traslado privado coordinado por nuestra agencia (tarifa de referencia por vehículo completo, sujeta a confirmación)',
       tipoVehiculo: totalPax <= 5 ? 'Van Ejecutiva A/C con Wi-Fi' : 'Microbús Familiar A/C',
       incluye: ['Chofer profesional bilingüe', 'Wi-Fi 4G/5G a bordo', 'Botellas de agua fría', 'Parada escénica Río Tárcoles', 'Seguro MOPT/ICT']
     },
@@ -989,7 +989,7 @@ export async function executeDynamicPricingYieldOptimizer(body: any) {
     precioNormalComboUSD: 145 + 170, // 315
     precioComboOptimizadoUSD: 275,
     ahorroTotalUSD: 40,
-    proveedorTransporte: 'Traslados privados o compartidos coordinados por nuestra agencia (tarifa de referencia, sujeta a confirmación)'
+    proveedorTransporte: 'Traslado privado coordinado por nuestra agencia (tarifa de referencia por vehículo completo, sujeta a confirmación)'
   };
 
   const duration = Date.now() - start;
