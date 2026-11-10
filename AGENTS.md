@@ -23,6 +23,8 @@ Aplican a cualquier IA o agente (Hark, Codex, Copilot, ChatGPT, JARVIS u otro). 
 
 Fuente normativa: [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). Si una sección más abajo la contradice, gana `docs/REGLAS_PLATAFORMA.md`.
 
+Modelo de negocio (agencia intermediaria, margen mínimo 20 %, flujo de reserva y pagos, pasarelas): [`docs/MODELO_OPERATIVO_AGENCIA.md`](docs/MODELO_OPERATIVO_AGENCIA.md).
+
 1. **Costo $0 hasta autorización explícita del dueño.** No reactivar facturación de Google Cloud, no desplegar a Cloud Run, no ejecutar Cloud Build, no activar planes ni APIs pagas. GitHub Actions del repo público sí.
 2. **No borrar nada** (servicios, imágenes, activadores, ramas, colecciones, agentes, código). Desactivar, pausar, marcar como obsoleto/simulado o mover a `archive/`.
 3. **Stripe solo TEST** (`stripeModeGuard`). **No tocar `api/[...path].ts`** sin autorización.
