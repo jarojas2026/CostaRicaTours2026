@@ -7,7 +7,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const floating = readFileSync('src/components/FloatingWhatsApp.tsx', 'utf8');
 
 test('AI chat facade preserves nonenumerable IncomingMessage headers and forwards only minimal request body', async () => {
-  const keys = ['GCP_WIF_AUDIENCE', 'GCP_WIF_SERVICE_ACCOUNT', 'CLOUD_RUN_BACKEND_URL', 'VERCEL_OIDC_TOKEN'];
+  const keys = ['GCP_WIF_AUDIENCE', 'GCP_WIF_SERVICE_ACCOUNT', 'CLOUD_RUN_BACKEND_URL', 'VERCEL_OIDC_TOKEN', 'CONCIERGE_UPSTREAM'];
   const original = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   const oldFetch = globalThis.fetch;
   const supplied = {
@@ -19,6 +19,8 @@ test('AI chat facade preserves nonenumerable IncomingMessage headers and forward
   const result: { status: number; body: unknown } = { status: 0, body: null };
 
   try {
+    // Modo proxy explícito (por defecto el concierge corre en proceso en Vercel).
+    process.env.CONCIERGE_UPSTREAM = 'cloud_run';
     process.env.GCP_WIF_AUDIENCE = 'test-audience';
     process.env.GCP_WIF_SERVICE_ACCOUNT = 'gateway@example.invalid';
     process.env.CLOUD_RUN_BACKEND_URL = 'https://backend.example.invalid';

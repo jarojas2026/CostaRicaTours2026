@@ -3,6 +3,16 @@
   "version": 2,
   "buildCommand": "npm run build",
   "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then exit 1; else echo 'Skipping automatic preview build; GitHub CI is authoritative for feature branches.'; exit 0; fi",
+  "functions": {
+    "api/ai/chat.ts": {
+      "maxDuration": 60,
+      "includeFiles": "public/data/mapa/**"
+    },
+    "api/gemini/concierge.ts": {
+      "maxDuration": 60,
+      "includeFiles": "public/data/mapa/**"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",

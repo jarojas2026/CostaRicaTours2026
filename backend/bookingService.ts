@@ -62,6 +62,9 @@ const inMemorySlots: Map<string, number> = new Map();
 export function getFirestoreDb(): Firestore | null {
   // Explicit contract-test isolation only; production still uses ADC normally.
   if (process.env.NODE_ENV === 'test' && process.env.FIRESTORE_CONTRACT_TEST_OFFLINE === 'true') return null;
+  // Vercel concierge runtime without Firebase credentials (no ADC outside Google):
+  // degrade to the no-storage path instead of waiting on a credential lookup.
+  if (process.env.CRT_FIRESTORE_ADMIN_DISABLED === 'true') return null;
   if (dbInstance) return dbInstance;
 
   try {

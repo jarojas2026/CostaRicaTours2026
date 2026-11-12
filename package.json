@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "npm run audit:system && vite build && node scripts/auditOperatorPrivacy.mjs dist && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs",
+    "build": "npm run audit:system && npm run build:concierge-runtime && vite build && node scripts/auditOperatorPrivacy.mjs dist && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs",
+    "build:concierge-runtime": "node scripts/buildConciergeRuntime.mjs",
     "catalog:build": "python3 scripts/catalog/build_operator_tours.py && python3 scripts/catalog/scrub_public_map_layers.py && python3 scripts/catalog/strip_public_business_contacts.py && python3 scripts/catalog/write_tour_redirects.py && tsx scripts/generateSitemap.ts",
     "audit:operator-privacy": "node scripts/auditOperatorPrivacy.mjs dist",
     "start": "node dist/server.cjs",
