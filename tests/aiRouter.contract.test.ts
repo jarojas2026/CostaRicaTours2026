@@ -144,7 +144,8 @@ test('no hand-written model literal outside aiConfig.ts', () => {
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
       if (statSync(path).isDirectory()) { if (name !== 'node_modules') walk(path); continue; }
-      if (!/\.(ts|mts|cts|js|mjs)$/.test(name) || path.endsWith(join('backend', 'aiConfig.ts'))) continue;
+      // El bundle generado de Vercel copia los literales desde aiConfig.ts (ya auditado como fuente).
+      if (!/\.(ts|mts|cts|js|mjs)$/.test(name) || path.endsWith(join('backend', 'aiConfig.ts')) || path.endsWith(join('api', '_lib', 'conciergeRuntime.mjs'))) continue;
       readFileSync(path, 'utf8').split('\n').forEach((line, i) => {
         if (/\b(?:gemini|claude)-(?:\d|embedding|pro\b|flash|sonnet|opus|haiku)/i.test(line)) offenders.push(`${path}:${i + 1}`);
       });

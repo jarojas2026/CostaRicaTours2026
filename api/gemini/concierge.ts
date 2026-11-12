@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import gatewayHandler from '../[...path].js';
+import { conciergeUsesCloudRun, respondInProcess } from '../_conciergeInProcess.js';
 
 /**
  * Public Concierge facade.
@@ -7,6 +8,9 @@ import gatewayHandler from '../[...path].js';
  * The browser should not select an internal specialist implementation or model
  * engine directly. Requests are normalized to the canonical concierge/tool
  * loop, while internal routing remains available behind the Cloud Run service.
+ *
+ * Por defecto el bucle canónico corre en proceso dentro de Vercel ($0, sin
+ * Cloud Run). `CONCIERGE_UPSTREAM=cloud_run` vuelve al proxy privado.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -15,6 +19,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const input = req.body && typeof req.body === 'object' ? req.body : {};
+  const conciergeBody = {
+    message: String(input.message || ''),
+    language: input.language === 'en' ? 'en' : 'es',
+    history: Array.isArray(input.history) ? input.history.slice(-12) : [],
+    context: input.context && typeof input.context === 'object' ? input.context : {},
+    sessionId: input.sessionId ? String(input.sessionId) : undefined,
+    agentId: 'concierge',
+    engine: 'auto',
+  };
+
+  if (!conciergeUsesCloudRun()) return respondInProcess(req, res, conciergeBody);
+
   const proxyReq = {
     ...req,
     // IncomingMessage.headers/method pueden ser getters del prototipo: el spread los pierde en Vercel
@@ -22,15 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     headers: req.headers,
     method: req.method,
     url: '/api/gemini/concierge',
-    body: {
-      message: String(input.message || ''),
-      language: input.language === 'en' ? 'en' : 'es',
-      history: Array.isArray(input.history) ? input.history.slice(-12) : [],
-      context: input.context && typeof input.context === 'object' ? input.context : {},
-      sessionId: input.sessionId ? String(input.sessionId) : undefined,
-      agentId: 'concierge',
-      engine: 'auto',
-    },
+    body: conciergeBody,
   } as VercelRequest;
 
   return gatewayHandler(proxyReq, res);

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import gatewayHandler from '../[...path].js';
+import { conciergeUsesCloudRun, respondInProcess } from '../_conciergeInProcess.js';
 
 /**
  * Backwards-compatible traveler chat facade.
@@ -9,6 +10,9 @@ import gatewayHandler from '../[...path].js';
  * concierge/tool loop instead of exposing a second chat engine or a legacy
  * mutation path. The canonical loop owns memory, live tools and safe booking
  * transitions.
+ *
+ * Por defecto el bucle canónico corre en proceso dentro de Vercel ($0, sin
+ * Cloud Run). `CONCIERGE_UPSTREAM=cloud_run` vuelve al proxy privado.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -22,6 +26,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ success: false, error: 'message_required' });
   }
 
+  const conciergeBody = {
+    message: message.slice(0, 8000),
+    language: input.language === 'en' ? 'en' : 'es',
+    history: Array.isArray(input.history) ? input.history.slice(-12) : [],
+    context: input.context && typeof input.context === 'object'
+      ? { ...input.context, channel: input.context.channel || 'web:ai-chat' }
+      : { channel: 'web:ai-chat' },
+    sessionId: input.sessionId ? String(input.sessionId).slice(0, 180) : undefined,
+    agentId: 'concierge',
+    engine: 'auto',
+  };
+
+  if (!conciergeUsesCloudRun()) return respondInProcess(req, res, conciergeBody);
+
   const proxyReq = {
     ...req,
     // IncomingMessage.headers may be exposed by a prototype getter rather than
@@ -30,17 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     headers: req.headers,
     method: req.method,
     url: '/api/gemini/concierge',
-    body: {
-      message: message.slice(0, 8000),
-      language: input.language === 'en' ? 'en' : 'es',
-      history: Array.isArray(input.history) ? input.history.slice(-12) : [],
-      context: input.context && typeof input.context === 'object'
-        ? { ...input.context, channel: input.context.channel || 'web:ai-chat' }
-        : { channel: 'web:ai-chat' },
-      sessionId: input.sessionId ? String(input.sessionId).slice(0, 180) : undefined,
-      agentId: 'concierge',
-      engine: 'auto',
-    },
+    body: conciergeBody,
   } as VercelRequest;
 
   res.setHeader('cache-control', 'no-store, max-age=0');

@@ -5,7 +5,7 @@ import counterHandler from '../api/agent/counter';
 import conciergeHandler from '../api/gemini/concierge';
 
 test('public concierge facades normalize requests to the canonical concierge loop', async () => {
-  const envNames = ['GCP_WIF_AUDIENCE', 'GCP_WIF_SERVICE_ACCOUNT', 'CLOUD_RUN_BACKEND_URL', 'VERCEL_OIDC_TOKEN'];
+  const envNames = ['GCP_WIF_AUDIENCE', 'GCP_WIF_SERVICE_ACCOUNT', 'CLOUD_RUN_BACKEND_URL', 'VERCEL_OIDC_TOKEN', 'CONCIERGE_UPSTREAM'];
   const original = Object.fromEntries(envNames.map(name => [name, process.env[name]]));
   const realFetch = globalThis.fetch;
   const realNow = Date.now;
@@ -14,6 +14,8 @@ test('public concierge facades normalize requests to the canonical concierge loo
   Date.now = () => now;
   console.error = () => {};
 
+  // Modo proxy explícito (por defecto el concierge corre en proceso en Vercel).
+  process.env.CONCIERGE_UPSTREAM = 'cloud_run';
   process.env.GCP_WIF_AUDIENCE = 'test-audience';
   process.env.GCP_WIF_SERVICE_ACCOUNT = 'gateway@example.invalid';
   process.env.CLOUD_RUN_BACKEND_URL = 'https://backend.example.invalid';
