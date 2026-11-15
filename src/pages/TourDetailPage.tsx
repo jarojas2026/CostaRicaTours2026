@@ -52,7 +52,7 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   const [children, setChildren] = useState(0);
   const [pickupHotel, setPickupHotel] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('pay_at_pickup');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('pay_at_pickup');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availabilityState, setAvailabilityState] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
   const [providerCheckState, setProviderCheckState] = useState<ProviderCheckState>('idle');
@@ -183,28 +183,6 @@ const TourDetailContent: React.FC<TourDetailPageProps> = ({ language, currency, 
   };
 
   const continueToOnlinePayment = async (bookingId: string, tourTitle: string) => {
-    if (paymentMethod === 'credit_card') {
-      const stripeRes = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId,
-          tourId: tour.id,
-          tourName: tourTitle,
-          totalUSD,
-          customerEmail: email.trim(),
-          date: selectedDate,
-          passengers,
-          adults,
-          children
-        })
-      });
-      const stripeData = await stripeRes.json().catch(() => ({}));
-      if (!stripeRes.ok) throw new Error(stripeData.message || stripeData.error || (language === 'es' ? 'El pago con tarjeta no está disponible.' : 'Card payment is unavailable.'));
-      if (!stripeData.url) throw new Error('Enlace de pago no disponible / Payment link unavailable');
-      window.location.href = requirePaymentUrl(stripeData.url);
-      return true;
-    }
 
     if (paymentMethod === 'paypal') {
       const paypalRes = await fetch('/api/paypal/create-order', {
