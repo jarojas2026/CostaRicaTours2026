@@ -3,12 +3,12 @@
 Plataforma full-stack de venta, asesoría, planificación y operación de servicios turísticos en Costa Rica.
 
 > **Reglas vigentes del dueño (25-oct-2026) — leer primero:** [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). En corto:
-> - **Costo $0** hasta autorización del dueño: no reactivar facturación de GCP, no desplegar a Cloud Run, no Cloud Build, no planes pagos.
+> - **Costos por fase:** durante el desarrollo y la auditoría actuales, mantener gasto incremental en $0 y los servicios pausados. La producción normal podrá tener costos recurrentes de infraestructura, IA, APIs y comunicaciones únicamente después de autorización escrita del dueño y presupuesto aprobado; nunca reactivar servicios pagos antes de esa autorización.
 > - **No borrar nada:** desactivar, pausar o marcar en lugar de eliminar.
 > - **Stripe solo TEST**; ninguna UI marca un pago como pagado. **No tocar `api/[...path].ts`** sin autorización.
 > - **Deploys pausados por defecto** (#445): `CLOUD_RUN_DEPLOY_ENABLED` y `CLOUD_RUN_OPERATIONS_ENABLED` deben ser `true` para ejecutar; apagadas por defecto.
 > - **Roles** (#447): cliente, proveedor (claims), administrador (`/api/admin/access-policy`; menú del avatar → "Panel de administración", botón Admin en móvil); colaboradores aún no existen.
-> - **Privacidad** (#447): visitantes sin memoria entre visitas, datos por `uid`, limpieza al cerrar sesión, IA sin memoria cruzada.
+> - **Privacidad** (#447): visitantes anónimos sin memoria persistente entre visitas; clientes autenticados con datos asociados a su `uid`, continuidad entre dispositivos y limpieza de datos locales al cerrar sesión; IA sin memoria cruzada entre cuentas.
 > - **Oficina virtual:** Hark director externo con Gabriel, JARVIS orquestador; autonomía 0–3 y aprobación humana obligatoria para pagos, cobros, precios, publicaciones y mensajes a clientes. Prohibidas facturas o acuses simulados.
 > - **Legal CR:** Ley 8968/PRODHAB, factura 4.4, IVA, ICT, Ley 7472, Ley 8454; no se ofrece pagar SINPE por terceros (art. 15 Ley 7786, SUGEF): solo se cobran servicios propios.
 > - **PRs:** rama desde `origin/main`, tests de contrato, `tsc` con `NODE_OPTIONS=--max-old-space-size=6144`, CI verde, **merge solo con OK de Gabriel**.
@@ -67,6 +67,49 @@ El producto debe funcionar como:
 - Agent Desk de voz portable para hoteles/PBX, con memoria por llamada y transferencia humana cuando esté configurada ([operación y límites](docs/portable-voice-agent-desk.md));
 - centro ejecutivo de control para el propietario/administrador;
 - plataforma que puede seguir evolucionando mediante nuevos agentes y herramientas sin perder las reglas de negocio existentes.
+
+## Alcance comercial y de usuarios: clientes globales, inventario inicial de Costa Rica
+**Decisión del propietario — 14 de noviembre de 2026. Este criterio aplica a todas las IA, agentes, desarrolladores, diseños, APIs, datos y decisiones de arquitectura.**
+
+### 1. Mercado de clientes: mundial desde el inicio
+- Una persona ubicada en cualquier país —por ejemplo, Francia o Alemania— debe poder abrir la plataforma desde la web o la experiencia de aplicación disponible, registrarse, utilizar su idioma y gestionar un viaje a Costa Rica.
+- La ubicación del cliente no amplía automáticamente el catálogo turístico. **Alcance mundial de clientes no significa inventario mundial de destinos.**
+- Diseñar la experiencia para acceso internacional: idiomas, formatos de fecha y número, zonas horarias, monedas, accesibilidad, conectividad y dispositivos. Español e inglés son los idiomas prioritarios actuales; francés, alemán y otros se incorporan por fases.
+- Una cuenta autenticada debe ser la identidad estable del viajero, independiente del dispositivo, navegador o país. El cliente debe poder regresar después de días o años y recuperar la información que legítimamente siga conservándose.
+- El viajero podrá gestionar perfil, preferencias, solicitudes, reservas, itinerarios, favoritos e historial, según las funciones realmente implementadas. No afirmar que una sección está operativa solo porque exista en el diseño.
+- Los visitantes anónimos no reciben memoria persistente entre visitas. La continuidad personal se habilita mediante cuenta autenticada y consentimiento aplicable. Los datos de cada cuenta deben permanecer aislados por identidad y autorización.
+
+### 2. Inventario y productos: Costa Rica inicialmente
+- El inventario turístico propio inicial se limita a Costa Rica: tours, experiencias, actividades, destinos, operadores y servicios locales que estén incorporados y verificados.
+- Se pueden ofrecer productos complementarios internacionales, como boletos aéreos y cruceros, cuando formen parte de un viaje que incluya Costa Rica o estén relacionados con ese itinerario.
+- No ampliar por inferencia el catálogo a tours, hoteles o actividades de otros países. Cualquier expansión de destinos requiere una decisión posterior del propietario y una evaluación de proveedores, datos, normativa y operación.
+- Búsquedas de vuelos, cruceros, tarifas y promociones solo pueden presentarse como actuales cuando exista una fuente/API habilitada, cobertura comprobada, fecha de consulta y condiciones verificables. No prometer “el vuelo más barato del mundo” ni descuentos en tiempo real sin cobertura y evidencia del proveedor.
+
+### 3. Producto B2B para hoteles y operadores
+- My Costa Rica Tours también se concibe como un servicio que hoteles y tour operadores de Costa Rica pueden contratar o rentar para atender a sus propios huéspedes y clientes internacionales.
+- El viajero final utiliza su cuenta personal; el hotel u operador utiliza las funciones empresariales autorizadas para su organización. Los datos, reservas, permisos y reportes de cada empresa deben estar aislados por tenant.
+- La plataforma debe poder llegar al huésped mediante web, móvil, QR o widget cuando cada canal esté implementado y autorizado. La modalidad comercial final —aplicación, widget, marca blanca o producto separado— debe respetar las decisiones pendientes registradas; no crear repositorios o aplicaciones paralelas sin aprobación.
+- El cliente final no debe recibir información privada de proveedores ni de otros hoteles, operadores o viajeros.
+
+### 4. Cuenta e historial de largo plazo
+- Diseñar identidad, almacenamiento y recuperación para continuidad entre sesiones y dispositivos, con control de acceso en servidor y aislamiento estricto entre usuarios.
+- Separar datos de perfil, preferencias, itinerarios, reservas, conversaciones, documentos y datos de pago. Cada categoría necesita finalidad, acceso, plazo de conservación y política de eliminación propios.
+- La conservación a largo plazo no significa guardar todos los datos indefinidamente. Implementar consentimiento, minimización, exportación, rectificación, eliminación y retención legal/comercial según corresponda.
+- Considerar la Ley 8968 y PRODHAB en Costa Rica y el RGPD cuando resulte aplicable a clientes de la Unión Europea. La implementación legal debe revisarse con asesoría competente; este README no sustituye una aprobación legal.
+
+### 5. Requisitos arquitectónicos derivados
+- Identidad global; internacionalización completa; moneda y zona horaria por contexto; catálogo y reglas comerciales con alcance geográfico explícito.
+- APIs y servicios preparados para concurrencia, colas, reintentos idempotentes, observabilidad, recuperación ante fallos y escalamiento gradual por región.
+- Separar el plano de clientes globales del plano de inventario/proveedores de Costa Rica. La expansión geográfica debe poder añadirse sin reconstruir cuentas, reservas ni historial.
+- Medir capacidad y costo por operación exitosa: búsquedas, consultas IA, mensajes, minutos de voz, solicitudes a proveedores y reservas. Establecer límites, alertas y presupuestos por cliente empresarial y globales antes de habilitar producción masiva.
+
+### 6. Instrucción obligatoria para todas las IA
+Antes de proponer o implementar una función, identificar por separado: **(a) país del cliente, (b) destino del viaje, (c) país/origen del inventario, (d) empresa/tenant que contrata el servicio y (e) idioma/moneda/zona horaria**. No confundir esas dimensiones. Si una decisión amplía destinos, crea una nueva aplicación, activa costos o cambia una regla de negocio, documentarla y solicitar aprobación del propietario.
+
+### 7. Interpretación de costos por fase
+El gasto incremental debe mantenerse en $0 durante el desarrollo y la auditoría actuales; los recursos que fueron pausados continúan pausados. Una vez que el propietario autorice por escrito la operación productiva, sí se permiten costos recurrentes normales y presupuestados de infraestructura, modelos de IA, APIs, datos de vuelos/hoteles/cruceros, telefonía, mensajería, almacenamiento y observabilidad. La autorización debe incluir presupuesto, límites, alertas, responsables y mecanismo de apagado. Esta aclaración no autoriza por sí sola a reactivar facturación ni servicios.
+
+---
 
 ---
 
