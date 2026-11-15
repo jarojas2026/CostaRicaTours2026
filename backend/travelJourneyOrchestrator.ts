@@ -4,6 +4,7 @@ import { getDestinationWeather } from './weatherPulseService';
 import { assessTripFit, buildPackingList, buildRouteStrategy, buildTravelerReasoning } from './tourismIntelligenceEngine';
 import { verifyJourneyAvailability, validateJourneyState } from './journeyVerificationService';
 import { getOperationalMemory } from './memoryService';
+import { canAccessJourney, hashJourneyCapability, issueJourneyCapability, type JourneyAccessContext, type JourneyAccessControl } from './journeyAccessPolicy';
 
 type JourneyParams = {
   sessionId?: string;
@@ -299,12 +300,17 @@ async function loadJourney(journeyId: string): Promise<any> {
   return doc.exists ? { journeyId, ...(doc.data() || {}) } : null;
 }
 
-export async function buildTripJourney(params: JourneyParams) {
+export async function buildTripJourney(params: JourneyParams, access?: JourneyAccessContext, journeyIdOverride?: string) {
   const days = Math.max(1, Math.min(Number(params.days) || 7, 21));
   const adults = Math.max(0, Math.min(Number(params.adults) || 0, 200));
   const children = Math.max(0, Math.min(Number(params.children) || 0, 200));
   const travelers = Math.max(1, Math.min(Number(params.travelers) || adults + children || 2, 200));
   const sessionId = clean(params.sessionId, 160) || undefined;
+  const ownerUid = clean(access?.ownerUid, 160) || undefined;
+  const capabilityToken = ownerUid ? undefined : (access?.capabilityToken || issueJourneyCapability());
+  const accessControl: JourneyAccessControl = ownerUid
+    ? { kind: 'firebase_user', ownerUid, version: 1 }
+    : { kind: 'guest_capability', tokenHash: hashJourneyCapability(capabilityToken!), version: 1 };
   const language = params.language === 'en' ? 'en' : 'es';
   const memory = sessionId ? await getOperationalMemory(sessionId) : null;
   const effectiveQuery = clean(params.query) || memory?.summary || '';
@@ -384,7 +390,7 @@ export async function buildTripJourney(params: JourneyParams) {
 
   const uniquePlannedTours = catalog.filter(tour => plannedTourIds.includes(String(tour.id)));
   const catalogReferenceSubtotalUSD = uniquePlannedTours.reduce((sum, tour) => sum + Number(tour.priceUSD || 0), 0) * travelers;
-  const journeyId = 'jrn_' + cryptoSafeId();
+  const journeyId = clean(journeyIdOverride, 120) || 'jrn_' + cryptoSafeId();
   const hasDate = Boolean(clean(params.date));
 
   const journey = {
@@ -454,8 +460,8 @@ export async function buildTripJourney(params: JourneyParams) {
     updatedAt: new Date().toISOString()
   };
 
-  await persistJourney(journey);
-  return journey;
+  await persistJourney({ ...journey, accessControl });
+  return { ...journey, ...(capabilityToken ? { accessToken: capabilityToken } : {}) };
 }
 
 function cryptoSafeId() {
@@ -464,18 +470,18 @@ function cryptoSafeId() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
-export async function getTravelerJourney(journeyId: string) {
+export async function getTravelerJourney(journeyId: string, access?: JourneyAccessContext) {
   const existing = await loadJourney(clean(journeyId, 120));
-  return existing || {
-    journeyId,
-    status: 'not_found',
-    error: 'No existe un viaje persistido con ese identificador.'
-  };
+  if (!existing || !canAccessJourney(existing.accessControl, access)) {
+    return { journeyId, status: 'not_found', error: 'No existe el viaje solicitado.' };
+  }
+  const { accessControl: _accessControl, ...publicJourney } = existing;
+  return publicJourney;
 }
 
-export async function adaptTravelerJourney(journeyId: string, params: JourneyParams) {
+export async function adaptTravelerJourney(journeyId: string, params: JourneyParams, access?: JourneyAccessContext) {
   const existing = await loadJourney(clean(journeyId, 120));
-  if (!existing || existing.status === 'not_found') {
+  if (!existing || !canAccessJourney(existing.accessControl, access)) {
     return { journeyId, status: 'not_found', error: 'No existe el viaje solicitado.' };
   }
 
@@ -504,9 +510,13 @@ export async function adaptTravelerJourney(journeyId: string, params: JourneyPar
     language: params.language
   };
 
-  const rebuilt = await buildTripJourney(merged);
+  const rebuildAccess: JourneyAccessContext = existing.accessControl?.kind === 'firebase_user'
+    ? { ownerUid: existing.accessControl.ownerUid }
+    : { capabilityToken: String(access?.capabilityToken || '') };
+  const rebuilt = await buildTripJourney(merged, rebuildAccess, journeyId);
+  const { accessToken: _accessToken, ...rebuiltJourney } = rebuilt;
   const adapted = {
-    ...rebuilt,
+    ...rebuiltJourney,
     journeyId,
     version: Number(existing.version || 1) + 1,
     status: 'adapted',
@@ -518,6 +528,9 @@ export async function adaptTravelerJourney(journeyId: string, params: JourneyPar
     createdAt: existing.createdAt,
     updatedAt: new Date().toISOString()
   };
-  await persistJourney(adapted);
-  return adapted;
+  await persistJourney({ ...adapted, accessControl: existing.accessControl });
+  return {
+    ...adapted,
+    ...(existing.accessControl?.kind === 'guest_capability' ? { accessToken: access?.capabilityToken } : {})
+  };
 }

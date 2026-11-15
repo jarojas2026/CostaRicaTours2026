@@ -204,11 +204,29 @@ export default function App() {
         detail.onResult?.({ ok: false, discarded: true, reply: staleReply });
       };
       try {
-        const sessionId = detail.sessionId || getPersonalItem('crt_customer_session') || `web_${globalThis.crypto?.randomUUID?.() || Date.now().toString(36)}`;
-        setPersonalItemInScope(scopeAtRequest, 'crt_customer_session', sessionId);
+        let sessionId = getPersonalItem('crt_customer_session');
+        let sessionToken = getPersonalItem('crt_chat_session_token');
+        if (!sessionId || !sessionToken) {
+          const sessionResponse = await fetch('/api/chat/session', { method: 'POST' });
+          const sessionData = await sessionResponse.json();
+          if (!sessionResponse.ok || !sessionData.sessionId || !sessionData.sessionToken) {
+            throw new Error('No se pudo iniciar una sesión privada de chat.');
+          }
+          if (!isStorageScopeCurrent(scopeAtRequest)) { discardStaleIntake(); return; }
+          sessionId = String(sessionData.sessionId);
+          sessionToken = String(sessionData.sessionToken);
+          setPersonalItemInScope(scopeAtRequest, 'crt_customer_session', sessionId);
+          setPersonalItemInScope(scopeAtRequest, 'crt_chat_session_token', sessionToken);
+        }
+        const intakeHeaders: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'x-chat-session-token': sessionToken
+        };
+        const signedTraveler = auth.currentUser;
+        if (signedTraveler) intakeHeaders.Authorization = 'Bearer ' + await signedTraveler.getIdToken();
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: intakeHeaders,
           body: JSON.stringify({
             ...detail,
             message,
@@ -227,8 +245,12 @@ export default function App() {
           setIntakeHandoffUrl(data.customer?.handoffUrl);
           setIntakeId(data.intakeId || '');
         }
+        if (data.journey?.accessToken) {
+          setPersonalItemInScope(scopeAtRequest, 'crt_journey_access_token', String(data.journey.accessToken));
+        }
         if (data.journey?.journeyId) {
           setPersonalItemInScope(scopeAtRequest, 'crt_active_journey', String(data.journey.journeyId));
+          setPersonalItemInScope(scopeAtRequest, 'crt_journey_id', String(data.journey.journeyId));
         }
         detail.onResult?.({
           ok: true,

@@ -5,11 +5,13 @@ import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
 import { rememberOrganizationalFlow } from './organizationalMemoryService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
-import { adaptTravelerJourney, buildTripJourney } from './travelJourneyOrchestrator';
+import { buildTripJourney } from './travelJourneyOrchestrator';
 import { executeBusinessGoal } from './businessGoalOrchestrator';
 import { redactProviderIdentityForCustomer } from './customerOutboundPrivacy';
 
 export interface CustomerIntakePayload {
+  /** Server-derived Firebase UID; never accepted from the public request body. */
+  ownerUid?: string;
   message?: string;
   language?: 'es' | 'en';
   sessionId?: string;
@@ -270,7 +272,8 @@ async function buildStructuredJourneyAssistant(
   ].filter(Boolean).join(' · ');
 
   const journeyInput = {
-    sessionId,
+    // Customer Intake session ids are not chat-session capabilities; never use
+    // them to load another conversation's private operational memory.
     query,
     days: request.days,
     travelers: request.travelers,
@@ -290,16 +293,11 @@ async function buildStructuredJourneyAssistant(
     specialRequests: request.specialRequests || undefined,
     language
   };
-  const existingJourneyId = clean(payload.context?.existingJourneyId, 120);
-  let journey: any;
-  if (existingJourneyId) {
-    const adapted = await adaptTravelerJourney(existingJourneyId, journeyInput);
-    journey = adapted?.status === 'not_found'
-      ? await buildTripJourney(journeyInput)
-      : adapted;
-  } else {
-    journey = await buildTripJourney(journeyInput);
-  }
+  // Customer Intake is a public channel. Never adapt a persisted journey
+  // from an ID supplied inside the public request body. A new isolated journey
+  // is created instead; continuing an existing journey requires its own
+  // authenticated route and owner/capability proof.
+  const journey: any = await buildTripJourney(journeyInput, payload.ownerUid ? { ownerUid: payload.ownerUid } : undefined);
 
   const missingForQuote = request.requestQuote ? missingQuoteInputs(request, payload) : [];
   let workflow: any = null;
@@ -346,6 +344,7 @@ async function buildStructuredJourneyAssistant(
     reply: formatJourneyForCustomer(journey, request, language, workflow, missingForQuote),
     agentId: 'journey_orchestrator',
     journeyId: journey.journeyId,
+    accessToken: journey.accessToken,
     workflow
   };
 }
@@ -506,6 +505,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload, trus
     },
     journey: journeyAssistant?.journeyId ? {
       journeyId: journeyAssistant.journeyId,
+      ...(journeyAssistant.accessToken ? { accessToken: journeyAssistant.accessToken } : {}),
       workflow: journeyAssistant.workflow || null
     } : undefined,
     operatorNotification: {

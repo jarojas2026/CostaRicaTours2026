@@ -173,13 +173,14 @@ export async function executeAgentTool(
 ): Promise<any> {
   // Fase C: el contexto lo pone el servidor (sesión, mensaje literal del cliente, canal).
   if (isPhaseCTool(String(name))) return executePhaseCTool(name as any, args || {}, context);
-  const result = await executeAgentToolUnredacted(name, args);
+  const result = await executeAgentToolUnredacted(name, args, context);
   return redactToolResultForClient(String(name), result);
 }
 
 async function executeAgentToolUnredacted(
   name: keyof typeof AGENT_TOOL_REGISTRY,
-  args: Record<string, any>
+  args: Record<string, any>,
+  context: AgentToolContext = {}
 ): Promise<any> {
   switch (name) {
     case 'search_operator_tours':
@@ -278,7 +279,7 @@ async function executeAgentToolUnredacted(
       return findBookingByCodeOrEmail(identifier);
     }
     case 'recall_memory': {
-      const sessionId = String(args.sessionId || '');
+      const sessionId = String(context.sessionId || '');
       if (!sessionId) throw new Error('sessionId requerido');
       const memory = await getOperationalMemory(sessionId);
       const relevant = await retrieveRelevantMemory(sessionId, String(args.query || ''), 8);
@@ -376,13 +377,13 @@ async function executeAgentToolUnredacted(
       return observeProviderSla();
     case 'trip_health_snapshot': {
       const journeyId = String(args.journeyId || '').trim();
-      const sessionId = String(args.sessionId || '').trim();
+      const sessionId = String(context.sessionId || '').trim();
       if (!journeyId && !sessionId) throw new Error('journeyId o sessionId requerido');
 
       let journey: any = null;
       if (journeyId) {
         const { getTravelerJourney } = await import('./travelJourneyOrchestrator');
-        journey = await getTravelerJourney(journeyId);
+        journey = await getTravelerJourney(journeyId, context.journeyAccess);
       }
 
       const memory = sessionId ? await getOperationalMemory(sessionId) : null;
@@ -447,7 +448,7 @@ async function executeAgentToolUnredacted(
       });
     case 'build_trip_journey':
       return buildTripJourney({
-        sessionId: args.sessionId ? String(args.sessionId) : undefined,
+        sessionId: context.sessionId || undefined,
         query: args.query ? String(args.query) : '',
         days: Number(args.days),
         travelers: Number(args.travelers),
@@ -468,11 +469,11 @@ async function executeAgentToolUnredacted(
         selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
         language: args.language === 'en' ? 'en' : 'es'
-      });
+      }, context.journeyAccess);
     case 'adapt_trip_journey':
       if (!args.journeyId) throw new Error('journeyId requerido');
       return adaptTravelerJourney(String(args.journeyId), {
-        sessionId: args.sessionId ? String(args.sessionId) : undefined,
+        sessionId: undefined,
         query: args.query ? String(args.query) : undefined,
         days: args.days === undefined ? undefined : Number(args.days),
         travelers: args.travelers === undefined ? undefined : Number(args.travelers),
@@ -493,7 +494,7 @@ async function executeAgentToolUnredacted(
         selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
         language: args.language === 'en' ? 'en' : undefined
-      });
+      }, context.journeyAccess);
     case 'validate_trip_plan':
       return validateTripPlan({
         days: Number(args.days),

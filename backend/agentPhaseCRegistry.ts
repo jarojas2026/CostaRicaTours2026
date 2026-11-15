@@ -18,6 +18,8 @@ import { HOLD_DURATION_MINUTES, confirmBooking, holdBooking } from './agentBooki
 /** Contexto que pone el SERVIDOR (no el modelo) al ejecutar una herramienta. */
 export interface AgentToolContext {
   sessionId?: string;
+  /** Identidad/capacidad derivada por el servidor; nunca se copia desde argumentos del modelo. */
+  journeyAccess?: { ownerUid?: string; capabilityToken?: string };
   /** Último mensaje literal del cliente en este turno (para verificar confirmaciones explícitas). */
   userMessage?: string;
   channel?: 'chat' | 'voice' | 'whatsapp' | 'admin';
