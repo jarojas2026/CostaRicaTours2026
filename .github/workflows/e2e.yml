@@ -43,7 +43,6 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
           GEMINI_API_KEY: "ci-dummy-key"
-          VITE_STRIPE_PUBLIC_KEY: "pk_test_dummy"
           VITE_GOOGLE_MAPS_API_KEY: "dummy-key"
 
       - name: Ejecutar e2e contra vite preview
