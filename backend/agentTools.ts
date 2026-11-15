@@ -473,7 +473,7 @@ async function executeAgentToolUnredacted(
     case 'adapt_trip_journey':
       if (!args.journeyId) throw new Error('journeyId requerido');
       return adaptTravelerJourney(String(args.journeyId), {
-        sessionId: args.sessionId ? String(args.sessionId) : undefined,
+        sessionId: undefined,
         query: args.query ? String(args.query) : undefined,
         days: args.days === undefined ? undefined : Number(args.days),
         travelers: args.travelers === undefined ? undefined : Number(args.travelers),
