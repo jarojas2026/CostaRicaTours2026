@@ -51,9 +51,8 @@ export function describeVoucherReason(reason: string | null | undefined, es: boo
 
 /**
  * Motivos reales de `checkout_unavailable` (POST /api/admin/leads/:id/payment-link).
- * El backend reenvía en `body.message` el error de createStripeCheckoutForBooking/checkoutQuote,
- * en español. Se distinguen rechazos de política de la reserva (no hubo llamada a Stripe)
- * de fallas de Stripe o de configuración. `body.reason` tiene prioridad si el backend lo envía.
+ * El backend puede devolver el motivo de la política de reserva o indicar que los pagos en línea
+ * están deshabilitados. Ningún mensaje debe sugerir una pasarela disponible. `body.reason` tiene prioridad si el backend lo envía.
  */
 type CheckoutKind = 'policy' | 'unavailable';
 const CHECKOUT_REASONS: Record<string, { kind: CheckoutKind; match: RegExp; text: Bilingual }> = {
@@ -94,7 +93,7 @@ const CHECKOUT_PREFIX: Record<CheckoutKind, Bilingual> = {
   unavailable: { es: 'El servicio de pagos en línea no está disponible', en: 'Online payments are unavailable' },
 };
 
-/** Clasifica el motivo de checkout_unavailable: política de la reserva vs. falla de Stripe. */
+/** Clasifica el motivo de checkout_unavailable: política de la reserva vs. servicio no disponible. */
 export function classifyCheckoutUnavailable(httpStatus: number, body: any): { kind: CheckoutKind; reason: string | null; serverMessage: string } {
   const serverMessage = typeof body?.message === 'string' ? body.message.trim().slice(0, 300) : '';
   const explicit = typeof body?.reason === 'string' ? CHECKOUT_REASONS[body.reason] : undefined;
@@ -103,7 +102,7 @@ export function classifyCheckoutUnavailable(httpStatus: number, body: any): { ki
     if (serverMessage && def.match.test(serverMessage)) return { kind: def.kind, reason, serverMessage };
   }
   // 409 = rechazo de política; 5xx/otros = servicio no disponible.
-  return { kind: httpStatus === 409 ? 'policy' : 'stripe', reason: null, serverMessage };
+  return { kind: httpStatus === 409 ? 'policy' : 'unavailable', reason: null, serverMessage };
 }
 
 function describeCheckoutUnavailable(httpStatus: number, body: any, es: boolean): string {
