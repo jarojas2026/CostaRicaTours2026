@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CalendarDays, Compass, Loader2, MapPinned, MessageCircle, PackageCheck, Route, Sparkles, Sun, Users, RefreshCw, Save } from 'lucide-react';
 import { Language } from '../types';
+import { auth } from '../firebase';
 import { withStorageScope } from '../hooks/useStorageScope';
 import { captureStorageScope, getPersonalItem, isStorageScopeCurrent, setPersonalItemInScope } from '../utils/privateStorage';
 
@@ -33,7 +34,14 @@ const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ lan
     if (!id) return;
     const scope = captureStorageScope();
     const controller = startRequest();
-    fetch(`/api/journey/${encodeURIComponent(id)}`, { signal: controller.signal })
+    const headers: Record<string, string> = {};
+    const user = auth.currentUser;
+    if (user) headers.Authorization = 'Bearer ' + await user.getIdToken();
+    else {
+      const capability = getPersonalItem('crt_journey_access_token');
+      if (capability) headers['x-journey-access-token'] = capability;
+    }
+    fetch(`/api/journey/${encodeURIComponent(id)}`, { headers, signal: controller.signal })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (isStale(controller, scope)) return;
@@ -49,12 +57,16 @@ const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ lan
     try {
       const sessionId = getPersonalItem('crt_journey_session') || 'traveler_' + Math.random().toString(36).slice(2);
       setPersonalItemInScope(scope, 'crt_journey_session', sessionId);
-      const response = await fetch('/api/journey/build', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form,sessionId,language}), signal: controller.signal });
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const user = auth.currentUser;
+      if (user) headers.Authorization = 'Bearer ' + await user.getIdToken();
+      const response = await fetch('/api/journey/build', { method:'POST', headers, body:JSON.stringify({...form,sessionId,language}), signal: controller.signal });
       const data = await response.json();
       // Si el viajero cerró sesión o cambió de cuenta, la respuesta vieja se descarta: no se guarda ni se muestra.
       if (isStale(controller, scope)) return;
       if (!response.ok) throw new Error(data.error || 'No se pudo construir el viaje');
       setJourney(data.journey);
+      if (data.journey?.accessToken) setPersonalItemInScope(scope, 'crt_journey_access_token', data.journey.accessToken);
       if (data.journey?.journeyId) setPersonalItemInScope(scope, journeyStorageKey, data.journey.journeyId);
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
@@ -67,7 +79,14 @@ const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ lan
     const controller = startRequest();
     setLoading(true); setError('');
     try {
-      const response = await fetch(`/api/journey/${encodeURIComponent(journey.journeyId)}/adapt`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...form, language}), signal: controller.signal });
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const user = auth.currentUser;
+      if (user) headers.Authorization = 'Bearer ' + await user.getIdToken();
+      else {
+        const capability = getPersonalItem('crt_journey_access_token');
+        if (capability) headers['x-journey-access-token'] = capability;
+      }
+      const response = await fetch(`/api/journey/${encodeURIComponent(journey.journeyId)}/adapt`, { method:'POST', headers, body:JSON.stringify({...form, language}), signal: controller.signal });
       const data = await response.json();
       if (isStale(controller, scope)) return;
       if (!response.ok) throw new Error(data.error || 'No se pudo adaptar el viaje');
