@@ -55,7 +55,7 @@ export function describeVoucherReason(reason: string | null | undefined, es: boo
  * en español. Se distinguen rechazos de política de la reserva (no hubo llamada a Stripe)
  * de fallas de Stripe o de configuración. `body.reason` tiene prioridad si el backend lo envía.
  */
-type CheckoutKind = 'policy' | 'stripe';
+type CheckoutKind = 'policy' | 'unavailable';
 const CHECKOUT_REASONS: Record<string, { kind: CheckoutKind; match: RegExp; text: Bilingual }> = {
   provider_not_confirmed: {
     kind: 'policy',
@@ -83,7 +83,7 @@ const CHECKOUT_REASONS: Record<string, { kind: CheckoutKind; match: RegExp; text
     text: { es: 'La fecha del servicio no es válida o ya pasó.', en: 'The service date is invalid or already past.' },
   },
     checkout_origin_missing: {
-    kind: 'stripe',
+    kind: 'unavailable',
     match: /APP_URL/,
     text: { es: 'Falta configurar APP_URL (origen HTTPS) para el retorno del pago.', en: 'APP_URL (HTTPS origin) is not configured for the payment return.' },
   },
@@ -91,7 +91,7 @@ const CHECKOUT_REASONS: Record<string, { kind: CheckoutKind; match: RegExp; text
 
 const CHECKOUT_PREFIX: Record<CheckoutKind, Bilingual> = {
   policy: { es: 'Reserva no elegible para cobro', en: 'Booking not eligible for payment' },
-  stripe: { es: 'El servicio de pagos en línea no está disponible', en: 'Online payments are unavailable' },
+  unavailable: { es: 'El servicio de pagos en línea no está disponible', en: 'Online payments are unavailable' },
 };
 
 /** Clasifica el motivo de checkout_unavailable: política de la reserva vs. falla de Stripe. */
