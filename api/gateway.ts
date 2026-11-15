@@ -54,7 +54,6 @@ function translatedGatewayRequest(
 }
 
 async function handlePaymentWebhook(
-  forwardedPath: string,
   req: VercelRequest,
   res: VercelResponse,
 ) {
@@ -161,7 +160,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(410).json({ success: false, accepted: false, error: 'stripe_disabled_by_product_policy' });
     }
     if (forwardedPath === 'webhooks/paypal') {
-      return await handlePaymentWebhook(forwardedPath, req, res);
+      return await handlePaymentWebhook(req, res);
     }
 
     // The legacy itinerary endpoint creates a synthetic fixed-price record and
