@@ -15,8 +15,6 @@ import {
   type CollectionReference
 } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
-import Stripe from 'stripe';
-import { assertStripeTestMode } from './stripeModeGuard';
 import { resolveCommerceTour } from './commerceCatalog';
 import { assertServiceDate, reservationQuote, slotAvailability } from './commercePolicy';
 import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
@@ -125,14 +123,9 @@ export function getSlotKey(tourId: string, date: string, time: string): string {
   return `${tourId}_${date}_${cleanTime}`;
 }
 
-let stripeClient: Stripe | null = null;
-export function getStripe(): Stripe | null {
-  if (!stripeClient && process.env.STRIPE_SECRET_KEY) {
-    // Stripe se queda en TEST hasta el lanzamiento: sk_live_/rk_live_ sin ALLOW_STRIPE_LIVE=true lanza.
-    assertStripeTestMode(process.env.STRIPE_SECRET_KEY);
-    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY);
-  }
-  return stripeClient;
+/** Compatibility export: Stripe is permanently unavailable in this product. */
+export function getStripe(): null {
+  return null;
 }
 
 let aiClient: GoogleGenAI | null = null;
@@ -255,13 +248,9 @@ function amountMatchesCents(actualCents: unknown, expectedUSD: number): boolean 
   return Number.isFinite(expectedCents) && expectedCents > 0 && Number(actualCents) === expectedCents;
 }
 
-export function stripeSessionMatchesBooking(session: any, expected: ExpectedPayment): boolean {
-  const reference = String(session?.metadata?.bookingId || session?.client_reference_id || '').trim();
-  return Boolean(expected.bookingId)
-    && reference === expected.bookingId
-    && session?.payment_status === 'paid'
-    && String(session?.currency || '').toLowerCase() === 'usd'
-    && amountMatchesCents(session?.amount_total, expected.totalUSD);
+/** Legacy compatibility predicate: Stripe sessions are never accepted. */
+export function stripeSessionMatchesBooking(_session: any, _expected: ExpectedPayment): false {
+  return false;
 }
 
 export function paypalOrderMatchesBooking(order: any, expected: ExpectedPayment): boolean {
@@ -276,7 +265,7 @@ export function paypalOrderMatchesBooking(order: any, expected: ExpectedPayment)
 
 export async function verifyPaymentServerSide(
   paymentMethod: string,
-  details: { paypalOrderId?: string; stripeSessionId?: string },
+  details: { paypalOrderId?: string },
   expected: ExpectedPayment
 ): Promise<{ verified: boolean; status: 'paid' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any; reason?: string }> {
   const pending = (reason: string) => ({ verified: false as const, status: 'pendiente_pago' as const, paymentStatus: 'pending' as const, reason });
@@ -324,25 +313,6 @@ export async function verifyPaymentServerSide(
     }
   }
 
-  if ((paymentMethod === 'credit_card' || paymentMethod === 'stripe') && details.stripeSessionId) {
-    try {
-      const stripe = getStripe();
-      if (stripe) {
-        const session = await stripe.checkout.sessions.retrieve(details.stripeSessionId);
-        if (stripeSessionMatchesBooking(session, expected)) {
-          return {
-            verified: true,
-            status: 'paid',
-            paymentStatus: 'completed',
-            meta: { stripePaymentIntent: session.payment_intent }
-          };
-        }
-        return pending('stripe_session_mismatch_or_unpaid');
-      }
-    } catch (err) {
-      console.error('Error verificando sesión de Stripe:', err);
-    }
-  }
 
   return pending('payment_not_verified');
 }
@@ -503,7 +473,7 @@ export async function createBooking(data: any) {
     totalCRC: crcRate ? Math.round(calculatedUSD * crcRate) : null,
     totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * crcRate) : calculatedUSD,
     currency: data.currency === 'CRC' ? 'CRC' : 'USD',
-    paymentMethod: data.paymentMethod || 'credit_card',
+    paymentMethod: data.paymentMethod || 'pay_at_pickup',
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
     lifecycle: paymentResult.verified ? 'paid' : 'payment_pending',

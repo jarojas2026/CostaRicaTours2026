@@ -9,14 +9,10 @@ import { readServerSource } from '../scripts/lib/serverSource';
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 const expected = { bookingId: 'CR-PV-1111', totalUSD: 150 };
 
-test('Stripe sessions are accepted only for the same booking, amount and currency', () => {
+test('legacy Stripe sessions are never accepted by the payment verifier', () => {
   const paid = { payment_status: 'paid', currency: 'usd', amount_total: 15000, metadata: { bookingId: 'CR-PV-1111' } };
-  assert.equal(stripeSessionMatchesBooking(paid, expected), true);
-  assert.equal(stripeSessionMatchesBooking({ ...paid, metadata: { bookingId: 'CR-PV-2222' } }, expected), false, 'other booking');
-  assert.equal(stripeSessionMatchesBooking({ ...paid, amount_total: 100 }, expected), false, 'cheaper amount');
-  assert.equal(stripeSessionMatchesBooking({ ...paid, currency: 'eur' }, expected), false, 'other currency');
-  assert.equal(stripeSessionMatchesBooking({ ...paid, payment_status: 'unpaid' }, expected), false, 'unpaid');
-  assert.equal(stripeSessionMatchesBooking({ ...paid, metadata: {}, client_reference_id: 'CR-PV-1111' }, expected), true, 'client_reference_id fallback');
+  assert.equal(stripeSessionMatchesBooking(paid, expected), false);
+  assert.equal(stripeSessionMatchesBooking({ ...paid, metadata: { bookingId: 'CR-PV-2222' } }, expected), false);
 });
 
 test('PayPal orders are accepted only with matching custom_id, amount and USD', () => {

@@ -260,7 +260,7 @@ async function executeAgentToolUnredacted(
         customerCountry: args.customerCountry ? String(args.customerCountry) : undefined,
         pickupHotel: args.pickupHotel ? String(args.pickupHotel) : undefined,
         specialRequests: args.specialRequests ? String(args.specialRequests) : undefined,
-        paymentMethod: 'credit_card',
+        paymentMethod: 'pay_at_pickup',
         idempotencyKey: args.idempotencyKey ? String(args.idempotencyKey) : `voice-${String(args.sessionId || '')}-${tourId}-${date}-${customerEmail}`
       });
       return {

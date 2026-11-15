@@ -10,7 +10,7 @@ Aplican a cualquier IA o agente (Hark, Codex, Copilot, ChatGPT, JARVIS u otro). 
 
 1. **Costo $0 obligatorio.** Prohibido activar o reactivar, sin aprobación explícita y escrita de Gabriel: facturación de Google Cloud, Cloud Run, Cloud Build, escaneo de vulnerabilidades (Container Scanning / On-Demand Scanning), VMs, planes pagos, Google Maps con facturación o cualquier servicio con costo. **Nada de deploys a GCP.** Los recursos de GCP se apagaron el 26-oct-2026 para detener cargos: no volver a encenderlos.
 2. **Nunca borrar nada** (servicios, imágenes, repositorios, buckets, ramas, datos). Si algo sobra: desactivarlo, aislarlo o marcarlo como simulación.
-3. **Stripe solo en modo TEST.**
+3. **Stripe totalmente excluido:** no TEST/LIVE, SDK, checkout, webhook, retorno, enlaces ni credenciales activas. No sustituir automáticamente por otra pasarela.
 4. **No tocar `api/[...path].ts`, `Header` ni `BottomNav`.**
 5. **No fusionar PRs** sin autorización explícita de Gabriel.
 6. **Cambios mínimos, aislados y sin dañar nada.** Antes de abrir un PR: correr los tests de contratos y TSC con `NODE_OPTIONS=--max-old-space-size=6144`.
@@ -25,11 +25,11 @@ Fuente normativa: [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). Si u
 
 1. **Costo $0 hasta autorización explícita del dueño.** No reactivar facturación de Google Cloud, no desplegar a Cloud Run, no ejecutar Cloud Build, no activar planes ni APIs pagas. GitHub Actions del repo público sí.
 2. **No borrar nada** (servicios, imágenes, activadores, ramas, colecciones, agentes, código). Desactivar, pausar, marcar como obsoleto/simulado o mover a `archive/`.
-3. **Stripe solo TEST** (`stripeModeGuard`). **No tocar `api/[...path].ts`** sin autorización.
+3. **Stripe totalmente excluido** por decisión del dueño; conservar el legado aislado y fallar cerrado. **No tocar `api/[...path].ts`** sin autorización.
 4. **Backend canónico `costa-rica-tours`; deploys y digest pausados por defecto** (#445, `docs/backend-canonico-pausa.md`). No encender `CLOUD_RUN_DEPLOY_ENABLED` / `CLOUD_RUN_OPERATIONS_ENABLED` sin OK.
 5. **Roles** (#447): cliente (sesión, `uid`), proveedor (claims `role=provider` + `providerId` + `providerRole`, más `provider_members/{uid}` activo), administrador (`GET /api/admin/access-policy` → `allowed:true`). Menú: avatar → "Panel de administración" (y botón Admin en `BottomNav`); proveedor → `/provider/portal`. Los accesos del menú son solo visuales: el backend autoriza cada ruta. Colaboradores: rol futuro, no implementado.
 6. **Privacidad** (#447): datos personales del navegador solo vía `src/utils/privateStorage.ts` (visitante → `sessionStorage`; usuario → `crt_u:<uid>:…`; limpieza al cerrar sesión). Memoria de IA solo con sesión emitida + token HMAC; nunca memoria de otro usuario.
-7. **Pagos** (#446): el panel de `/admin/leads` genera enlaces Stripe TEST y lee estado; **nunca marca pagado** desde la UI. Solo webhook firmado o retorno verificado.
+7. **Pagos**: el panel de `/admin/leads` solo enlaza reservas y consulta estados históricos; no genera enlaces ni cobros en línea. Stripe está excluido.
 8. **Oficina virtual:** Gabriel (dueño) ↔ Hark (director externo) → JARVIS (orquestador) → oficinas y agentes. Autonomía inicial 0 (niveles 0–3). Aprobación humana de un solo uso, siempre, para pagos, cobros, reembolsos, payouts, precios, publicaciones y mensajes a clientes. Sin heartbeat real no se muestra un agente "trabajando".
 9. **Prohibido** generar facturas, comprobantes, acuses de Hacienda o confirmaciones simuladas. La factura DGT simulada de `nativeAutomationEngine.ts` se está retirando en #448.
 10. **Legal CR:** Ley 8968/PRODHAB, factura electrónica 4.4, IVA 13 %, ICT, Ley 7472 (retracto), Ley 8454 (los agentes nunca firman). **No se ofrece pagar SINPE por terceros** (art. 15 Ley 7786, inscripción SUGEF): solo se cobran servicios propios.
@@ -58,7 +58,7 @@ Fuente normativa: [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). Si u
 * **Backend**: Express en `server.ts` con Vite como middleware en desarrollo y empaquetado `dist/server.cjs` para producción.
 * **Puerto Único**: El servidor se enlaza exclusivamente al puerto `3000` y host `0.0.0.0`.
 * **Seguridad de API Keys**:
-  * La clave de Gemini (`GEMINI_API_KEY`) y credenciales de Stripe/PayPal permanecen estrictamente en el backend (`server.ts` o servicios de servidor).
+  * La clave de Gemini (`GEMINI_API_KEY`) y cualquier credencial de proveedor existente permanecen estrictamente en el backend (`server.ts` o servicios de servidor). No configurar credenciales Stripe.
   * No exponer variables privadas con prefijo `VITE_`.
 * **Compatibilidad de Despliegue**:
   * Mantener `public/_redirects` y `netlify.toml` con reglas SPA de reescritura (`/* /index.html 200`) para evitar errores 404 al recargar rutas en Netlify o Cloud Run.

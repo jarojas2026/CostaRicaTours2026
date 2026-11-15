@@ -59,7 +59,7 @@ La base principal de reservas, autenticación de operadores, idempotencia, contr
 ## Dependencias externas que siguen requiriendo configuración real
 
 1. **Firebase/Firestore:** credenciales de servidor, proyecto y database ID mediante secretos de despliegue.
-2. **Pagos:** `STRIPE_SECRET_KEY`, PayPal client/secret y configuración de producción. El backend rechaza pagos cuando no están configurados.
+2. **Pagos:** Stripe está excluido por política del producto. Cualquier alternativa requiere evaluación y autorización explícita; no se deben configurar credenciales Stripe.
 3. **Tipo de cambio:** `USD_TO_CRC_RATE` debe mantenerse actualizado desde una fuente oficial del BCCR; no debe utilizarse un valor histórico fijo para cotizaciones financieras.
 4. **automatización nativa MCP (opcional):** solo habilitar `automatización nativa_ENABLED=true` si existen URL y token válidos en secretos del entorno.
 5. **Proveedores:** los correos, teléfonos, cuentas de liquidación y disponibilidad deben proceder de datos operativos verificados, no de fixtures de código.
@@ -70,7 +70,7 @@ La base principal de reservas, autenticación de operadores, idempotencia, contr
 - Sustituir cualquier imagen/catálogo provisional por activos y disponibilidad reales de cada operador.
 - Completar la alimentación de disponibilidad por proveedor y sincronización de calendario en producción.
 - Conectar el frontend a un servicio de tipo de cambio vigente en lugar de multiplicadores históricos embebidos en componentes de UI.
-- Validar el flujo completo de Stripe/PayPal/SINPE en entorno real antes de activar cobros.
+- Evaluar cualquier flujo de pago alternativo únicamente tras autorización expresa; Stripe no forma parte de las opciones de la plataforma.
 - Ejecutar pruebas end-to-end contra Firebase y proveedores reales antes del lanzamiento público.
 
 ## Regla de producción

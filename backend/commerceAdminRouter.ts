@@ -50,14 +50,13 @@ commerceAdminRouter.get('/', async (_req, res) => {
       todayCR, sampleLimit: 500,
       emailTransportConfigured: Boolean(process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY || (process.env.SMTP_USER && process.env.SMTP_PASS)),
       paypalCredentialsConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_SECRET),
-      stripeCredentialsConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
       leadAutoFollowUpEnabled: isAutoFollowUpEnabled(),
     });
     res.json({
       salesReadiness,
       products: [...catalog.values()],
       providers: providers.docs.map(doc => ({ id: doc.id, name: doc.data().name, website: doc.data().website, active: doc.data().active, verified: doc.data().verified })),
-      payments: { paypalCredentialsConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_SECRET), paypalMode: process.env.PAYPAL_MODE || 'sandbox', stripeCredentialsConfigured: Boolean(process.env.STRIPE_SECRET_KEY) },
+      payments: { paypalCredentialsConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_SECRET), paypalMode: process.env.PAYPAL_MODE || 'sandbox' },
       voice: voiceAgentDeskConfig(),
       truncated: products.size === 500 || providers.size === 500 || slots.size === 500
     });

@@ -38,7 +38,7 @@ Costa Rica Tours no debe migrarse de framework únicamente por adoptar un domini
 - Tailwind CSS, React Router y PWA;
 - Node.js + Express + TypeScript;
 - Firebase Auth + Firestore / Firebase Admin;
-- Stripe y PayPal server-side;
+- proveedor de pago autorizado, si se evalúa y aprueba; Stripe está excluido;
 - agentes de IA, memoria del viajero y Journey Orchestrator;
 - automatización nativa en código + Firestore, **sin n8n**;
 - Vercel para frontend/gateway;
@@ -83,7 +83,7 @@ Mantener visibles hasta que exista evidencia de cierre:
 
 - completar/verificar WIF/IAM y variables del gateway Vercel → Cloud Run;
 - scheduler externo para trabajos operativos que no deben depender del proceso Node;
-- webhooks firmados de Stripe/PayPal, idempotencia, duplicados, reintentos y refunds;
+- webhooks firmados únicamente del proveedor de pago que se evalúe y apruebe; Stripe no se integra;
 - E2E autenticado del ciclo completo de reserva;
 - auditoría de catálogo y fotografías de tours;
 - pruebas de seguridad, carga y accesibilidad;

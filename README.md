@@ -5,7 +5,7 @@ Plataforma full-stack de venta, asesoría, planificación y operación de servic
 > **Reglas vigentes del dueño (25-oct-2026) — leer primero:** [`docs/REGLAS_PLATAFORMA.md`](docs/REGLAS_PLATAFORMA.md). En corto:
 > - **Costo $0** hasta autorización del dueño: no reactivar facturación de GCP, no desplegar a Cloud Run, no Cloud Build, no planes pagos.
 > - **No borrar nada:** desactivar, pausar o marcar en lugar de eliminar.
-> - **Stripe solo TEST**; ninguna UI marca un pago como pagado. **No tocar `api/[...path].ts`** sin autorización.
+> - **Stripe está totalmente excluido**; no se crean cobros ni enlaces Stripe. **No tocar `api/[...path].ts`** sin autorización.
 > - **Deploys pausados por defecto** (#445): `CLOUD_RUN_DEPLOY_ENABLED` y `CLOUD_RUN_OPERATIONS_ENABLED` deben ser `true` para ejecutar; apagadas por defecto.
 > - **Roles** (#447): cliente, proveedor (claims), administrador (`/api/admin/access-policy`; menú del avatar → "Panel de administración", botón Admin en móvil); colaboradores aún no existen.
 > - **Privacidad** (#447): visitantes sin memoria entre visitas, datos por `uid`, limpieza al cerrar sesión, IA sin memoria cruzada.
@@ -124,7 +124,7 @@ Antes de modificar algo:
 - Express
 - TypeScript
 - Firebase Admin / Firestore
-- Stripe
+- Pagos en línea: no habilitados por política del producto
 - PayPal
 - Google GenAI
 - Anthropic Vertex
@@ -705,7 +705,7 @@ Las rutas sensibles deben estar protegidas.
 
 - Firebase service accounts;
 - refresh tokens;
-- claves de Stripe;
+- credenciales de proveedores de pago autorizados, si se habilitan tras aprobación;
 - claves de PayPal;
 - API keys de Gemini;
 - credenciales SMTP;
@@ -1524,7 +1524,7 @@ Se revisaron fuentes oficiales de OpenAI Agents SDK, Google ADK, LangGraph, Temp
 - **Riesgo operativo P0 detectado:** ver issue [#175](https://github.com/jarojas2026/CostaRicaTours2026/issues/175) sobre reportar un hold exitoso cuando el registro canónico pudo fallar. No anunciarlo solucionado hasta corregir y probar el flujo.
 - **Seguridad:** una clave de cuenta de servicio compartida externamente necesita revocación/rotación; usar federación de identidades sin claves en CI/CD.
 
-Se mantienen íntegros el catálogo y reserva única, motor nativo, memoria, Agent Desk, autenticación, Firestore, Stripe/PayPal y reglas de no inventar fuentes. Expandir al mundo exige jurisdicción y proveedores verificables, no registros sintéticos.
+Se mantienen íntegros el catálogo y reserva única, motor nativo, memoria, Agent Desk, autenticación, Firestore y reglas de no inventar fuentes. Stripe está excluido por política del producto. Expandir al mundo exige jurisdicción y proveedores verificables, no registros sintéticos.
 
 
 ---

@@ -29,7 +29,7 @@ Decisión del dueño del 26-oct-2026. Aplican a cualquier IA o agente (Hark, Cod
 |---|---|---|
 | 1 | **Costo $0 hasta autorización** | Decisión del dueño (25-oct-2026): "mantener gastos en 0 hasta decidir cómo avanzar". Prohibido sin OK explícito y por escrito del dueño: reactivar la facturación de Google Cloud, desplegar a Cloud Run, ejecutar Cloud Build, activar planes pagos (Vercel Pro, APIs con cobro, números de WhatsApp, dominios, VPS). El CI de GitHub Actions del repo público sí se puede usar. |
 | 2 | **No borrar nada** | Decisión del dueño (25-oct-2026): conservar todo lo creado. No eliminar servicios, imágenes, revisiones, activadores, ramas, colecciones, documentos, agentes ni código. En su lugar: **desactivar, pausar, marcar como obsoleto/simulado o mover a `archive/`**. Esto reemplaza cualquier propuesta anterior de limpieza (p. ej. del Artifact Registry). |
-| 3 | **Stripe solo TEST** | `stripeModeGuard` bloquea LIVE (`stripe_live_blocked`). Pasar a LIVE solo con OK explícito del dueño. Ninguna UI ni agente marca un pago como pagado (ver §5). |
+| 3 | **Stripe totalmente excluido** | No existe checkout, SDK operativo, webhook, retorno, enlace ni credencial Stripe en la experiencia o runtime. El código legado se conserva aislado y falla cerrado. No se habilita TEST/LIVE ni se sustituye por otra pasarela sin evaluación y aprobación explícita. |
 | 4 | **No tocar `api/[...path].ts`** | Puerta de Vercel hacia el backend. Cualquier cambio requiere autorización explícita del dueño en el issue/PR. |
 | 5 | **No inventar** | Ni precios, disponibilidad, cupos, operadores, reseñas, certificaciones, métricas, confirmaciones de pago, respuestas de proveedores, facturas ni acuses de Hacienda. Sin fuente: `null` / "no disponible" / "por validar". |
 | 6 | **El cliente nunca ve al proveedor** | Ver `AGENTS.md` §12 y `tests/publicOperatorPrivacy.contract.test.ts`. |
@@ -86,8 +86,8 @@ Implementado en `src/utils/privateStorage.ts`, `src/hooks/useStorageScope.tsx`, 
 
 Fusionado el 25-oct-2026 (`550eaf8`). `src/components/LeadPaymentPanel.tsx`, `src/components/leadPaymentMessages.ts`, `tests/leadPaymentPanel.contract.test.ts`.
 
-- Solo dueño. Usa endpoints existentes (#439/#441): `POST /api/admin/leads/:id/link-booking`, `POST /api/admin/leads/:id/payment-link` (checkout **Stripe TEST**), `GET /api/admin/leads/:id/payment-status` (solo lectura).
-- **La UI nunca marca nada como pagado.** El pago solo se confirma por webhook firmado de Stripe o retorno verificado en el servidor. Los mensajes de error nunca afirman que se cobró ("No se generó ningún cobro").
+- Solo dueño. Conserva `POST /api/admin/leads/:id/link-booking` y `GET /api/admin/leads/:id/payment-status` (solo lectura). La creación de enlaces de pago está deshabilitada; el endpoint heredado responde 410 sin crear cobros.
+- **La UI nunca marca nada como pagado.** No hay proveedor de cobro en línea habilitado por esta regla. El estado de pago solo refleja evidencia histórica verificada por el servidor; no se aceptan nuevos eventos Stripe.
 - No hay modo LIVE desde el panel.
 - Con el backend pausado (§2) el panel no puede operar en producción.
 
@@ -132,14 +132,14 @@ Oficinas: Proveeduría · Mercadeo/Contenido · Finanzas · Atención · Legal/C
 
 - **Fase 1 ($0, solo código):** PRs pequeños — planta por oficinas del registro, retirar factura simulada (#448), bandeja de aprobaciones, consola JARVIS, gobernanza, agentes nuevos en autonomía 0, checklist legal en `/admin/financial-legal`, retracto en términos (texto con OK del dueño).
 - **Fase 2 (requiere OK del dueño, implica backend activo = costo):** worker que ejecute delegaciones con heartbeat y límite de costo; herramientas reales detrás de `authorizeAgentAction`.
-- **Fase 3 (después de ventas reales, con OK):** comprobantes 4.4 con proveedor certificado, Stripe LIVE, revisión legal formal.
+- **Fase 3 (después de ventas reales, con OK):** comprobantes 4.4 con proveedor certificado y revisión legal formal. Stripe permanece excluido.
 
 ---
 
 ## 7. Pagos y SINPE
 
 - La plataforma **solo cobra sus propios servicios** (tours, transporte, entradas, paquetes que vende Costa Rica Tours). Luego la empresa paga a sus proveedores (por SINPE u otro medio) como cualquier compra propia.
-- **No se ofrece** "pagar SINPE por el cliente" (que el cliente pague con tarjeta y la plataforma haga transferencias SINPE a terceros por él). Hacer transferencias de fondos de terceros de forma sistemática/habitual es actividad del **art. 15 de la Ley 7786**, que exige inscripción y supervisión ante SUGEF (Acuerdo SUGEF 11-18, art. 4 c: "transferencias sistemáticas sustanciales de fondos, realizadas por cualquier medio"). Además, verificar requisitos del BCCR y las condiciones de Stripe. Reabrir el tema requiere asesoría legal y decisión del dueño.
+- **No se ofrece** "pagar SINPE por el cliente" (que el cliente pague con tarjeta y la plataforma haga transferencias SINPE a terceros por él). Hacer transferencias de fondos de terceros de forma sistemática/habitual es actividad del **art. 15 de la Ley 7786**, que exige inscripción y supervisión ante SUGEF (Acuerdo SUGEF 11-18, art. 4 c: "transferencias sistemáticas sustanciales de fondos, realizadas por cualquier medio"). Además, verificar requisitos del BCCR y condiciones del proveedor que se evalúe. Reabrir el tema requiere asesoría legal y decisión del dueño.
 - Margen mínimo de negocio: 20 % (política del dueño).
 
 ---
@@ -184,7 +184,7 @@ Investigación del 25-oct-2026 (datos de GitHub). Nada de esto está instalado n
 | Uso | Recomendado | Licencia |
 |---|---|---|
 | Traducción y SEO de la web | react-i18next, Vike | MIT — corren en el frontend actual |
-| Pagos | stripe-node | MIT |
+| Pagos | Sin SDK de pasarela habilitado | — |
 | CMS de catálogo | Payload / Strapi | MIT |
 | Bandeja WhatsApp/web/email | Chatwoot | MIT (carpeta `enterprise/` aparte) |
 | Entradas / eventos | Hi.Events, pretix | ⚠️ AGPL-3.0 (Hi.Events exige "Powered by") |

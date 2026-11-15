@@ -1,6 +1,5 @@
 import crypto from 'crypto';
-import type Stripe from 'stripe';
-import { getBookingById, getFirestoreDb, getStripe, updateBookingStatus } from './bookingService';
+import { getBookingById, getFirestoreDb, updateBookingStatus } from './bookingService';
 
 export type PaymentWebhookResult = {
   accepted: boolean;
@@ -81,70 +80,9 @@ async function releaseFailedEvent(provider: 'stripe' | 'paypal', eventId: string
   }, { merge: true });
 }
 
-function bookingAmountCents(booking: any): number {
-  return Math.round(Number(booking?.totalUSD || 0) * 100);
-}
-
-export async function processStripeWebhook(rawBody: Buffer, signature: string | undefined): Promise<PaymentWebhookResult> {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  const stripe = getStripe();
-  if (!secret || !stripe) throw new Error('Stripe webhook no configurado.');
-  if (!signature) throw new Error('Firma Stripe ausente.');
-
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, secret);
-  } catch {
-    throw new Error('Firma Stripe no válida.');
-  }
-
-  const claimed = await claimEvent('stripe', event.id);
-  if (!claimed) return { accepted: true, duplicate: true, eventId: event.id };
-
-  try {
-    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const bookingId = String(session.metadata?.bookingId || session.client_reference_id || '').trim();
-      if (!bookingId) throw new Error('Evento Stripe sin referencia de reserva.');
-      const booking = await getBookingById(bookingId);
-      if (!booking) throw new Error('Reserva Stripe no encontrada.');
-      if (session.payment_status !== 'paid' || session.currency !== 'usd' || session.amount_total !== bookingAmountCents(booking)) {
-        throw new Error('Evento Stripe no coincide con importe/moneda/estado de la reserva.');
-      }
-      if (booking.paymentStatus !== 'completed') {
-        const updated = await updateBookingStatus(bookingId, {
-          status: 'paid',
-          paymentStatus: 'completed',
-          paymentVerifiedAt: new Date().toISOString(),
-          paymentEvidence: {
-            provider: 'stripe',
-            webhookEventId: event.id,
-            sessionId: session.id,
-            paymentIntent: session.payment_intent
-          }
-        });
-        if (!updated.success) throw new Error(updated.error || 'No se pudo reconciliar Stripe.');
-      }
-      await finishEvent('stripe', event.id, { status: 'processed', bookingId, type: event.type });
-      return { accepted: true, eventId: event.id, bookingId };
-    }
-
-    if (event.type === 'charge.refunded') {
-      const charge = event.data.object as Stripe.Charge;
-      await finishEvent('stripe', event.id, {
-        status: 'review_required',
-        type: event.type,
-        paymentIntent: typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
-      });
-      return { accepted: true, eventId: event.id, reason: 'refund_requires_booking_reconciliation' };
-    }
-
-    await finishEvent('stripe', event.id, { status: 'ignored', type: event.type });
-    return { accepted: true, eventId: event.id, reason: 'event_not_actionable' };
-  } catch (error) {
-    await releaseFailedEvent('stripe', event.id, error);
-    throw error;
-  }
+/** Compatibility export: never verifies, accepts, or mutates data for Stripe. */
+export async function processStripeWebhook(_rawBody: Buffer, _signature: string | undefined): Promise<PaymentWebhookResult> {
+  throw new Error('STRIPE_DISABLED_IN_COSTA_RICA_TOURS');
 }
 
 async function paypalAccessToken(): Promise<{ token: string; baseUrl: string }> {

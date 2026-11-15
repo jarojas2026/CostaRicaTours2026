@@ -37,7 +37,7 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   const [children, setChildren] = useState(0);
   const [pickupHotel, setPickupHotel] = useState('');
   const [specialRequests] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('pay_at_pickup');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'sinpe_movil' | 'pay_at_pickup'>('pay_at_pickup');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -170,27 +170,6 @@ export const TourDetailModal: React.FC<TourDetailModalProps> = ({
   };
 
   const continueToOnlinePayment = async (bookingId: string) => {
-    if (paymentMethod === 'credit_card') {
-      const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/stripe/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId,
-          tourId: tour.id,
-          tourName: modalTitle,
-          totalUSD,
-          customerEmail: email,
-          date: selectedDate,
-          passengers: adults + children,
-          adults,
-          children
-        })
-      });
-      const stripeData = await stripeRes.json();
-      if (!stripeRes.ok) throw new Error(stripeData.error || 'Pago no disponible / Payment unavailable');
-      window.location.href = requirePaymentUrl(stripeData.url);
-      return true;
-    }
 
     if (paymentMethod === 'paypal') {
       const paypalRes = await fetch('/api/paypal/create-order', {

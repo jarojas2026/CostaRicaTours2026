@@ -9,14 +9,15 @@ const ingress = fs.readFileSync(path.join(root, 'api/_paymentWebhookIngress.ts')
 const webhookHttp = fs.readFileSync(path.join(root, 'backend/paymentWebhookHttpService.ts'), 'utf8');
 
 test('payment webhooks are intercepted before the generic gateway body path', () => {
-  assert.match(gateway, /forwardedPath === 'webhooks\/stripe'/);
+  assert.match(gateway, /forwardedPath === 'webhooks\/stripe'[\s\S]*status\(410\)/);
   assert.match(gateway, /forwardedPath === 'webhooks\/paypal'/);
   assert.match(gateway, /readRawRequestBody\(req\)/);
-  assert.match(gateway, /translateStripeWebhook\(rawBody, req\.headers\)/);
+  assert.doesNotMatch(gateway, /translateStripeWebhook/);
   assert.match(gateway, /translatePayPalWebhook\(rawBody, req\.headers\)/);
 });
 
-test('Stripe webhook ingress fails closed and never forwards payment events', () => {
+test('Stripe webhook is rejected at the edge before reading or forwarding its body', () => {
+  assert.match(gateway, /stripe_disabled_by_product_policy/);
   assert.match(ingress, /STRIPE_DISABLED_REASON/);
   assert.match(ingress, /throw new Error/);
   assert.doesNotMatch(ingress, /STRIPE_WEBHOOK_SECRET/);

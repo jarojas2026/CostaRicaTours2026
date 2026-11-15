@@ -13,7 +13,6 @@ export type CommercialReadinessInput = {
   sampleLimit: number;
   emailTransportConfigured: boolean;
   paypalCredentialsConfigured: boolean;
-  stripeCredentialsConfigured: boolean;
   leadAutoFollowUpEnabled: boolean;
 };
 
@@ -46,7 +45,7 @@ export function assessCommercialReadiness(input: CommercialReadinessInput) {
   if (offers.length === 0) blockers.push('publish_contractual_offer');
   if (slots.length === 0) blockers.push('publish_future_inventory');
   if (!input.emailTransportConfigured) blockers.push('configure_real_email_transport');
-  if (!input.paypalCredentialsConfigured && !input.stripeCredentialsConfigured) blockers.push('configure_payment_gateway');
+  if (!input.paypalCredentialsConfigured) blockers.push('configure_payment_gateway');
   if (!input.leadAutoFollowUpEnabled) blockers.push('review_followup_policy_and_consent');
 
   return {
@@ -70,7 +69,7 @@ export function assessCommercialReadiness(input: CommercialReadinessInput) {
     },
     configuration: {
       emailTransportConfigured: input.emailTransportConfigured,
-      paymentCredentialsConfigured: input.paypalCredentialsConfigured || input.stripeCredentialsConfigured,
+      paymentCredentialsConfigured: input.paypalCredentialsConfigured,
       leadAutoFollowUpEnabled: input.leadAutoFollowUpEnabled,
     },
     blockers,

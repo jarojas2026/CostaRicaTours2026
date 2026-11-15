@@ -8,8 +8,6 @@ import { FlightRoute, Language, Currency, BookingRequest } from '../types';
 import { formatCurrency, getLangText } from '../utils/i18n';
 import { getUsdToCrcRate } from '../utils/currencies';
 
-// Bandera: el cobro online con tarjeta (Stripe) para vuelos está apagado. No cambiar a true sin aprobación del dueño.
-export const FLIGHT_ONLINE_PAYMENT_ENABLED = false as boolean;
 
 interface FlightBookingModalProps {
   flight: FlightRoute;
@@ -36,6 +34,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [passengersCount, setPassengersCount] = useState(1);
   const [selectedCabin, setSelectedCabin] = useState<'Economy' | 'Business'>(flight.cabinClass === 'Business' ? 'Business' : 'Economy');
   const [seatPreference, setSeatPreference] = useState<'window' | 'aisle' | 'extra_legroom'>('window');
+  const [paymentMethod, setPaymentMethod] = useState<'pay_at_pickup'>('pay_at_pickup');
   
   // Add-on options
   const [includeAirportTransfer, setIncludeAirportTransfer] = useState(false);
@@ -48,8 +47,6 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [phone, setPhone] = useState('');
   const [passportNumber, setPassportNumber] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  // This flow only requests a quote; the only selectable option is a no-charge request.
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pay_at_pickup' | 'sinpe_movil'>('pay_at_pickup');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
@@ -119,37 +116,6 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
     };
 
     try {
-      // Cobro online de vuelos APAGADO: el bloque se conserva detrás de la bandera, pero nunca se ejecuta
-      // mientras FLIGHT_ONLINE_PAYMENT_ENABLED sea false (Stripe no se activa en este flujo de cotización).
-      if (FLIGHT_ONLINE_PAYMENT_ENABLED && paymentMethod === 'credit_card') {
-        const stripeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ""}/api/stripe/create-checkout-session`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({
-             tourId: 'flight-' + flight.flightNumber,
-             tourName: 'Vuelo ' + flight.flightNumber + ' - ' + flight.airline,
-             totalUSD,
-             customerEmail: email,
-             date: departureDate,
-             passengers: passengersCount,
-             flightNumber: flight.flightNumber,
-             cabinClass: selectedCabin,
-             includeAirportTransfer,
-             includeWelcomeSimKit,
-             includeTravelInsurance
-           })
-        });
-        const stripeData = await stripeRes.json().catch(() => ({}));
-        if (!stripeRes.ok) {
-          throw new Error(stripeData?.message || stripeData?.error || 'No se pudo iniciar el pago seguro.');
-        }
-        if (!stripeData.url) {
-          throw new Error('La pasarela no devolvió un enlace de pago verificable.');
-        }
-        window.location.href = stripeData.url;
-        return;
-      }
-
       const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

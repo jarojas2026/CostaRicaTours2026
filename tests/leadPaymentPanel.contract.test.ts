@@ -12,14 +12,14 @@ test('bookingId: misma regla que el backend', () => {
 });
 
 test('errores conocidos: mensajes honestos, nunca "pagado"', () => {
-  for (const code of ['lead_without_booking', 'stripe_live_blocked', 'checkout_unavailable', 'booking_not_found']) {
+  for (const code of ['lead_without_booking', 'stripe_disabled_by_product_policy', 'checkout_unavailable', 'booking_not_found']) {
     const es = describeLeadPaymentError(409, { error: code }, true);
     const en = describeLeadPaymentError(409, { error: code }, false);
     assert.ok(es.length > 0 && en.length > 0);
     assert.doesNotMatch(es, /\bpagad[oa]\b/i);
     assert.doesNotMatch(en, /\bpaid\b/i);
   }
-  assert.match(describeLeadPaymentError(503, { error: 'stripe_live_blocked' }, true), /TEST/);
+  assert.match(describeLeadPaymentError(410, { error: 'stripe_disabled_by_product_policy' }, true), /deshabilitados/);
 });
 
 test('sin permiso o servicio caído: mensaje claro', () => {
@@ -28,11 +28,11 @@ test('sin permiso o servicio caído: mensaje claro', () => {
   assert.equal(describeLeadPaymentError(418, { message: 'x' }, true), 'x');
 });
 
-test('el panel usa solo los endpoints existentes y nunca marca pagado desde la UI', () => {
+test('el panel no ofrece checkout y nunca marca pagado desde la UI', () => {
   const src = readFileSync(new URL('../src/components/LeadPaymentPanel.tsx', import.meta.url), 'utf8');
-  for (const p of ["'link-booking'", "'payment-link'", "'payment-status'"]) assert.ok(src.includes(p), p);
+  for (const p of ["'link-booking'", "'payment-status'"]) assert.ok(src.includes(p), p);
   assert.doesNotMatch(src, /paymentStatus\s*[:=]\s*['"]completed['"]/);
-  assert.doesNotMatch(src, /sk_live_|ALLOW_STRIPE_LIVE\s*=/);
+  assert.doesNotMatch(src, /Stripe|stripe|payment-link|sk_live_|ALLOW_STRIPE_LIVE\s*=/i);
   const page = readFileSync(new URL('../src/pages/LeadsPipelinePage.tsx', import.meta.url), 'utf8');
   assert.ok(page.includes('<LeadPaymentPanel'), 'LeadsPipelinePage monta el panel');
 });
@@ -54,7 +54,7 @@ test('motivos del voucher: traducidos ES/EN, nunca el código crudo', () => {
   assert.doesNotMatch(src, /\(\$\{status\.voucherMotivo\}\)/, 'el panel no muestra el motivo crudo');
 });
 
-test('checkout_unavailable: política de la reserva vs. falla de Stripe, con el motivo real', () => {
+test('checkout_unavailable: política de reserva y servicio de pagos no disponible', () => {
   const provider = { error: 'checkout_unavailable', message: 'Falta la confirmación del proveedor. No se generó ningún cobro.' };
   assert.equal(classifyCheckoutUnavailable(409, provider).kind, 'policy');
   assert.equal(classifyCheckoutUnavailable(409, provider).reason, 'provider_not_confirmed');
@@ -69,16 +69,16 @@ test('checkout_unavailable: política de la reserva vs. falla de Stripe, con el 
   assert.equal(classifyCheckoutUnavailable(409, notPayable).reason, 'booking_not_payable');
   assert.match(describeLeadPaymentError(409, notPayable, false), /not eligible for payment/);
 
-  const noStripe = { error: 'checkout_unavailable', message: 'Pagos no disponibles: Stripe no está configurado en el servidor.' };
-  assert.equal(classifyCheckoutUnavailable(503, noStripe).kind, 'stripe');
-  assert.match(describeLeadPaymentError(503, noStripe, false), /^Stripe did not create.*not configured/);
+  const noStripe = { error: 'checkout_unavailable', message: 'Pagos en línea no disponibles por política del producto.' };
+  assert.equal(classifyCheckoutUnavailable(503, noStripe).kind, 'unavailable');
+  assert.match(describeLeadPaymentError(503, noStripe, false), /Online payments are unavailable/);
 
   const stripeErr = { error: 'checkout_unavailable', message: 'Invalid API Key provided' };
   const c = classifyCheckoutUnavailable(500, stripeErr);
-  assert.equal(c.kind, 'stripe');
+  assert.equal(c.kind, 'unavailable');
   assert.equal(c.reason, null);
-  assert.match(describeLeadPaymentError(500, stripeErr, true), /^Stripe no generó.*Invalid API Key provided/);
-  assert.match(describeLeadPaymentError(500, stripeErr, false), /server: Invalid API Key provided/);
+  assert.match(describeLeadPaymentError(500, stripeErr, true), /servicio de pagos en línea no está disponible/);
+  assert.match(describeLeadPaymentError(500, stripeErr, false), /Online payments are unavailable/);
 
   // reason explícito del backend tiene prioridad; 409 sin catálogo = política.
   assert.equal(classifyCheckoutUnavailable(500, { error: 'checkout_unavailable', reason: 'invalid_amount' }).kind, 'policy');
