@@ -1330,7 +1330,7 @@ export async function executeAutonomousFullBookingLifecycle(payload: {
     pickupHotel: String(payload.pickupHotel || '').trim(),
     specialRequests: String(payload.specialRequests || '').trim(),
     currency: 'USD',
-    paymentMethod: 'credit_card',
+    paymentMethod: 'pay_at_pickup',
     customer: { name: customerName, email: customerEmail, phone: customerPhone }
   });
 
