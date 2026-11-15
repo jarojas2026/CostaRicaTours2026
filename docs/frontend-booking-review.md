@@ -20,9 +20,9 @@
 
 ## Conciliación de pago (siguiente corrección)
 
-- Stripe incorpora el identificador interno de la reserva en `client_reference_id` y `metadata`. Al volver de Checkout, el backend recupera la sesión del proveedor, exige estado pagado, moneda USD y total exacto antes de registrar el pago.
+- Stripe está excluido: no existe Checkout, retorno ni verificación de sesiones. Las referencias históricas no se aceptan como evidencia de pago.
 - PayPal incorpora el mismo identificador en `custom_id`. Al retornar, el backend captura o recupera la orden en PayPal y exige estado COMPLETED, moneda y total coincidentes.
-- Ningún retorno de navegador confirma al proveedor: el pago verificado llega solo a `paid`; la confirmación operativa sigue siendo una transición independiente.
+- Ningún retorno de navegador confirma al proveedor: el estado de pago requiere evidencia del proveedor autorizado y validación del servidor; la confirmación operativa sigue siendo una transición independiente.
 - El antiguo enlace GET `customer-confirm` quedó retirado con 410: abrir un email nunca puede marcar pagada, cancelar ni despachar una reserva.
 
 Estos cambios no constituyen un despliegue ni una prueba de pago real.
