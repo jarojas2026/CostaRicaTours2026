@@ -514,8 +514,9 @@ export async function adaptTravelerJourney(journeyId: string, params: JourneyPar
     ? { ownerUid: existing.accessControl.ownerUid }
     : { capabilityToken: String(access?.capabilityToken || '') };
   const rebuilt = await buildTripJourney(merged, rebuildAccess);
+  const { accessToken: _accessToken, ...rebuiltJourney } = rebuilt;
   const adapted = {
-    ...rebuilt,
+    ...rebuiltJourney,
     journeyId,
     version: Number(existing.version || 1) + 1,
     status: 'adapted',
@@ -528,5 +529,8 @@ export async function adaptTravelerJourney(journeyId: string, params: JourneyPar
     updatedAt: new Date().toISOString()
   };
   await persistJourney({ ...adapted, accessControl: existing.accessControl });
-  return adapted;
+  return {
+    ...adapted,
+    ...(existing.accessControl?.kind === 'guest_capability' ? { accessToken: access?.capabilityToken } : {})
+  };
 }
