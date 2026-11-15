@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getBookingById, getFirestoreDb, getStripe, updateBookingStatus } from './bookingService';
+import { getBookingById, getFirestoreDb, updateBookingStatus } from './bookingService';
 
 export type PaymentWebhookResult = {
   accepted: boolean;
@@ -78,10 +78,6 @@ async function releaseFailedEvent(provider: 'stripe' | 'paypal', eventId: string
     error: error instanceof Error ? error.message.slice(0, 500) : 'unknown',
     failedAt: new Date().toISOString()
   }, { merge: true });
-}
-
-function bookingAmountCents(booking: any): number {
-  return Math.round(Number(booking?.totalUSD || 0) * 100);
 }
 
 /** Compatibility export: never verifies, accepts, or mutates data for Stripe. */
