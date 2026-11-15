@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   canAccessJourney,
   hashJourneyCapability,
@@ -43,4 +45,30 @@ test('malformed and short guest capabilities are rejected', () => {
   for (const token of ['', 'abc', 'x'.repeat(201)]) {
     assert.equal(canAccessJourney(control, { capabilityToken: token }), false);
   }
+});
+
+const read = (...parts: string[]) => fs.readFileSync(path.join(process.cwd(), ...parts), 'utf8');
+
+test('all journey HTTP routes derive access from verified Firebase identity or guest capability', () => {
+  const source = read('backend', 'routes', 'journey.ts');
+  const calls = source.split('\n').filter(line => /buildTripJourney\(|getTravelerJourney\(|adaptTravelerJourney\(/.test(line) && !line.trim().startsWith('import'));
+  assert.ok(calls.length >= 8, 'all route handlers are included');
+  for (const call of calls) assert.match(call, /journeyAccess\(req\)/, call);
+  assert.match(source, /verifyFirebaseUser\(req\)/);
+  assert.match(source, /x-journey-access-token/);
+});
+
+test('public Customer Intake never adapts a saved journey from an untrusted id', () => {
+  const source = read('backend', 'customerIntakeGateway.ts');
+  assert.doesNotMatch(source, /adaptTravelerJourney\(/);
+  assert.match(source, /Never adapt a persisted journey/);
+});
+
+test('guest capability is stored in private storage and sent only as a request header', () => {
+  const storage = read('src', 'utils', 'privateStorage.ts');
+  const component = read('src', 'components', 'FullTripJourneyBuilder.tsx');
+  assert.match(storage, /'crt_journey_access_token'/);
+  assert.match(component, /x-journey-access-token/);
+  assert.match(component, /setPersonalItemInScope\(scope, 'crt_journey_access_token'/);
+  assert.match(component, /Authorization = 'Bearer ' \+ await user\.getIdToken\(\)/);
 });
