@@ -9,14 +9,22 @@ import { buildTripJourney, adaptTravelerJourney, getTravelerJourney } from '../t
 import { observeJourneyState, guardianReplanJourney } from '../journeyVerificationService';
 import { createRouter, aiAdmission } from './shared';
 import { verifyFirebaseUser } from '../authMiddleware';
+import { verifyChatSessionAccess } from '../signedAccessTokens';
 
 /** Deriva la identidad del token Firebase verificado o la capacidad guest del header. */
 async function journeyAccess(req: import('express').Request) {
   const user = await verifyFirebaseUser(req);
   const guestToken = req.headers['x-journey-access-token'];
+  const requestedSessionId = String(req.body?.sessionId || '').trim();
+  const chatToken = req.headers['x-chat-session-token'];
+  const verifiedSessionId = typeof chatToken === 'string'
+    && verifyChatSessionAccess(requestedSessionId, chatToken)
+    ? requestedSessionId
+    : undefined;
   return {
     ownerUid: user?.uid ? String(user.uid) : undefined,
-    capabilityToken: typeof guestToken === 'string' ? guestToken : undefined
+    capabilityToken: typeof guestToken === 'string' ? guestToken : undefined,
+    sessionId: verifiedSessionId
   };
 }
 
@@ -30,7 +38,7 @@ export const aiJourneyRouter = createRouter();
 /* 🧭 FULL TRAVEL JOURNEY — MEMORY + CATALOG + LIVE DATA + SALES */
 aiJourneyRouter.post('/api/ai/journey', aiAdmission.middleware, async (req, res) => {
   try {
-    const result = await buildTripJourney(req.body || {}, await journeyAccess(req));
+    const result = await buildTripJourney({ ...(req.body || {}), sessionId: (await journeyAccess(req)).sessionId }, await journeyAccess(req));
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo construir el viaje.' });
