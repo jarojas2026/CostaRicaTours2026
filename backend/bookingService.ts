@@ -473,7 +473,7 @@ export async function createBooking(data: any) {
     totalCRC: crcRate ? Math.round(calculatedUSD * crcRate) : null,
     totalAmount: data.currency === 'CRC' ? Math.round(calculatedUSD * crcRate) : calculatedUSD,
     currency: data.currency === 'CRC' ? 'CRC' : 'USD',
-    paymentMethod: data.paymentMethod || 'credit_card',
+    paymentMethod: data.paymentMethod || 'pay_at_pickup',
     paymentStatus: paymentResult.paymentStatus,
     status: paymentResult.status,
     lifecycle: paymentResult.verified ? 'paid' : 'payment_pending',
