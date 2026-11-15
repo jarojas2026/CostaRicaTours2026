@@ -98,3 +98,45 @@ No introducir un cambio parcial que proteja solo una ruta. La autorización debe
 Este documento registra hallazgos y un plan de corrección; **no afirma que la cuenta mundial, el aislamiento de itinerarios o la memoria entre dispositivos ya estén implementados**. No se cambió lógica, reglas de Firestore, datos, API gateway, configuración, facturación ni infraestructura. No se ejecutaron tests ni despliegues.
 
 La implementación debe realizarse como una unidad coherente en rama aislada, con pruebas de autorización para todas las rutas y herramientas. El PR debe permanecer en borrador hasta completar pruebas y revisión de seguridad. No fusionar a `main` ni desplegar sin autorización expresa del propietario.
+
+
+## Ampliación de auditoría: caminos indirectos y rutas auxiliares
+
+La inspección posterior de los puntos de entrada encontró caminos adicionales que deben formar parte del mismo control de acceso. Esta ampliación evita corregir únicamente las rutas REST de journeys y dejar rutas laterales.
+
+### 6. Customer Intake puede adaptar un journey por referencia
+
+En `backend/routes/intake.ts`, `POST /api/customer-intake` es público y acepta un contexto enviado por el cliente. En `backend/customerIntakeGateway.ts`, `buildStructuredJourneyAssistant()` lee `payload.context.existingJourneyId` y llama directamente a `adaptTravelerJourney(existingJourneyId, journeyInput)`.
+
+El identificador de sesión web se filtra por formato, pero eso no acredita por sí mismo la posesión de un journey ni vincula la sesión a una cuenta autenticada. La corrección debe exigir la misma autorización de propietario/capacidad que las rutas de journeys, o ignorar la referencia y crear un viaje nuevo cuando no exista prueba válida. No se debe aceptar un `existingJourneyId` como autorización.
+
+### 7. Las herramientas de agentes también llaman al orquestador directamente
+
+En `backend/agentTools.ts`, las herramientas `build_trip_journey`, `adapt_trip_journey` y `trip_health_snapshot` invocan directamente funciones del orquestador. Las rutas de herramientas internas deben validar una credencial de agente y una autorización de recurso/actor; la política no puede depender únicamente de que el acceso ocurra desde una ruta de journeys.
+
+En `backend/routes/agents.ts`, la ruta `POST /api/agent/tools/generate_custom_itinerary` aparece registrada sin el middleware `requireAgentTool`, a diferencia de otras herramientas vecinas. Esta ruta no demuestra por sí misma acceso a un journey guardado, pero es un hallazgo separado de control de acceso y posible abuso de recursos de IA que debe revisarse antes de producción. No se declara explotabilidad ni gasto ocurrido.
+
+### 8. La compatibilidad de visitantes debe diseñarse antes de exigir login
+
+`src/components/FullTripJourneyBuilder.tsx` actualmente construye viajes como visitante, enviando un `sessionId` generado en el cliente y guardando el `journeyId` en almacenamiento local/de sesión. No envía una prueba de identidad Firebase ni una capacidad de acceso específica del journey.
+
+Por tanto, exigir Firebase Auth en todas las operaciones rompería el planificador público actual. La alternativa segura es:
+- Cuenta autenticada: el backend deriva `ownerUid` únicamente del ID token Firebase verificado.
+- Visitante: el backend emite una capacidad aleatoria, de alta entropía, vinculada a un solo journey; almacena únicamente su hash y la devuelve una sola vez al navegador.
+- Lectura/adaptación del visitante: requiere esa capacidad, nunca el `journeyId` por sí solo.
+- Conversión de visitante a cuenta: requiere acción explícita y verificación; la vinculación debe ocurrir en una operación controlada, no por coincidencia de IDs.
+- Viajes históricos sin propietario ni capacidad verificable: quedan en cuarentena de acceso hasta un procedimiento de recuperación aprobado.
+
+### 9. Alcance de implementación corregido
+
+La unidad mínima de implementación debe abarcar conjuntamente:
+- `backend/travelJourneyOrchestrator.ts` y un módulo único de política/capacidad de journey.
+- Todas las rutas de `backend/routes/journey.ts`.
+- `backend/customerIntakeGateway.ts` y el contrato de `POST /api/customer-intake`.
+- Herramientas y rutas de `backend/agentTools.ts` y `backend/routes/agents.ts`.
+- `src/components/FullTripJourneyBuilder.tsx` y `src/utils/privateStorage.ts`.
+- Contratos y pruebas de rutas, autenticación, visitantes, conversión de cuenta, tenant y compatibilidad.
+
+No se debe fusionar una protección parcial de las rutas REST mientras Customer Intake o herramientas internas puedan modificar el mismo recurso por otra vía. La ruta auxiliar de generación de itinerarios debe tratarse además como una revisión separada de acceso/costo.
+
+**Resultado de esta ampliación:** el alcance inicial de corrección era demasiado estrecho. Se actualiza el plan para cubrir todos los caminos directos e indirectos antes de afirmar que existe aislamiento real. Sigue siendo una auditoría estática; no se ejecutaron pruebas ni se cambió runtime.
