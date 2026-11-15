@@ -40,7 +40,7 @@ Configuración: mínimo 0 instancias, facturación por solicitud, Container/On-D
 ### Recomendación
 1. **Backend: opción A** (Cloud Run optimizado), activada solo cuando Gabriel autorice por escrito pagar la deuda y reactivar facturación.
 2. **Frontend**: Vercel Hobby no permite vender. Para mantener $0 de forma legítima, evaluar mover el frontend estático a **Cloudflare Pages o Netlify Free** (sin tocar código de la app), o pasar a Vercel Pro ($20/mes) cuando entre la primera venta.
-3. Hasta entonces, el sitio puede seguir como **vitrina sin pagos reales** (Stripe TEST).
+3. Hasta entonces, el sitio puede seguir como **vitrina sin pagos en línea.
 
 ## 2. Checklist de preparación internacional
 
