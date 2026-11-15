@@ -46,8 +46,6 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [phone, setPhone] = useState('');
   const [passportNumber, setPassportNumber] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  // This flow only requests a quote; the only selectable option is a no-charge request.
-  const [paymentMethod, setPaymentMethod] = useState<'pay_at_pickup'>('pay_at_pickup');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
