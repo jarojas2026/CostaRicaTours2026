@@ -75,7 +75,7 @@ test('checkout_unavailable: política de reserva y servicio de pagos no disponib
 
   const stripeErr = { error: 'checkout_unavailable', message: 'Invalid API Key provided' };
   const c = classifyCheckoutUnavailable(500, stripeErr);
-  assert.equal(c.kind, 'stripe');
+  assert.equal(c.kind, 'unavailable');
   assert.equal(c.reason, null);
   assert.match(describeLeadPaymentError(500, stripeErr, true), /servicio de pagos en línea no está disponible/);
   assert.match(describeLeadPaymentError(500, stripeErr, false), /Online payments are unavailable/);
