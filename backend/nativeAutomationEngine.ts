@@ -329,7 +329,6 @@ export async function executeConfirmacionReserva(body: any) {
   // proves the provider record belongs to THIS booking with the right amount.
   const paymentDetails = {
     paypalOrderId: booking.paypalOrderId || booking.paymentDetails?.paypalOrderId || body.paypalOrderId,
-    stripeSessionId: booking.stripeSessionId || booking.paymentDetails?.stripeSessionId || body.stripeSessionId
   };
   const verification = await verifyPaymentServerSide(paymentMethod, paymentDetails, {
     bookingId: String(booking.bookingId || booking.id || reservationId),
