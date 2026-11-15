@@ -248,13 +248,9 @@ function amountMatchesCents(actualCents: unknown, expectedUSD: number): boolean 
   return Number.isFinite(expectedCents) && expectedCents > 0 && Number(actualCents) === expectedCents;
 }
 
-export function stripeSessionMatchesBooking(session: any, expected: ExpectedPayment): boolean {
-  const reference = String(session?.metadata?.bookingId || session?.client_reference_id || '').trim();
-  return Boolean(expected.bookingId)
-    && reference === expected.bookingId
-    && session?.payment_status === 'paid'
-    && String(session?.currency || '').toLowerCase() === 'usd'
-    && amountMatchesCents(session?.amount_total, expected.totalUSD);
+/** Legacy compatibility predicate: Stripe sessions are never accepted. */
+export function stripeSessionMatchesBooking(_session: any, _expected: ExpectedPayment): false {
+  return false;
 }
 
 export function paypalOrderMatchesBooking(order: any, expected: ExpectedPayment): boolean {
@@ -269,7 +265,7 @@ export function paypalOrderMatchesBooking(order: any, expected: ExpectedPayment)
 
 export async function verifyPaymentServerSide(
   paymentMethod: string,
-  details: { paypalOrderId?: string; stripeSessionId?: string },
+  details: { paypalOrderId?: string },
   expected: ExpectedPayment
 ): Promise<{ verified: boolean; status: 'paid' | 'pendiente_pago'; paymentStatus: 'completed' | 'pending'; meta?: any; reason?: string }> {
   const pending = (reason: string) => ({ verified: false as const, status: 'pendiente_pago' as const, paymentStatus: 'pending' as const, reason });
