@@ -21,8 +21,8 @@ type Bilingual = { es: string; en: string };
 
 const MESSAGES: Record<string, Bilingual> = {
   lead_without_booking: { es: 'El lead no tiene una reserva enlazada. No se generó ningún cobro.', en: 'Lead has no linked booking. No charge was created.' },
-  stripe_live_blocked: { es: 'Stripe está bloqueado en modo LIVE. Solo se permite TEST hasta el lanzamiento.', en: 'Stripe LIVE is blocked. Only TEST is allowed until launch.' },
-  checkout_unavailable: { es: 'Stripe no devolvió un enlace de pago. Revisá la configuración TEST.', en: 'Stripe returned no payment link. Check the TEST setup.' },
+  stripe_disabled_by_product_policy: { es: 'Los pagos en línea están deshabilitados por política del producto. No se generó ningún cobro.', en: 'Online payments are disabled by product policy. No charge was created.' },
+  checkout_unavailable: { es: 'Los pagos en línea no están disponibles. No se generó ningún cobro.', en: 'Online payments are unavailable. No charge was created.' },
   booking_not_found: { es: 'La reserva no existe. No se enlazó nada.', en: 'Booking not found. Nothing was linked.' },
   invalid_booking_id: { es: 'ID de reserva inválido (A-Z, 0-9, _ o -).', en: 'Invalid booking ID (A-Z, 0-9, _ or -).' },
   invalid_lead_id: { es: 'ID de lead inválido.', en: 'Invalid lead ID.' },
@@ -35,7 +35,7 @@ const MESSAGES: Record<string, Bilingual> = {
  */
 const VOUCHER_REASONS: Record<string, Bilingual> = {
   estado_no_pagado: { es: 'la reserva aún no está pagada', en: 'the booking is not paid yet' },
-  pago_no_verificado: { es: 'el pago no ha sido verificado por Stripe', en: 'the payment has not been verified by Stripe' },
+  pago_no_verificado: { es: 'el pago no ha sido verificado por el servidor', en: 'the payment has not been verified by the server' },
   monto_invalido: { es: 'el monto de la reserva no es válido', en: 'the booking amount is invalid' },
   no_disponible: { es: 'el voucher no está disponible para esta reserva', en: 'the voucher is not available for this booking' },
 };
@@ -82,12 +82,7 @@ const CHECKOUT_REASONS: Record<string, { kind: CheckoutKind; match: RegExp; text
     match: /fecha v[aá]lida/i,
     text: { es: 'La fecha del servicio no es válida o ya pasó.', en: 'The service date is invalid or already past.' },
   },
-  stripe_not_configured: {
-    kind: 'stripe',
-    match: /stripe no est[aá] configurado/i,
-    text: { es: 'Stripe no está configurado en el servidor (TEST).', en: 'Stripe is not configured on the server (TEST).' },
-  },
-  checkout_origin_missing: {
+    checkout_origin_missing: {
     kind: 'stripe',
     match: /APP_URL/,
     text: { es: 'Falta configurar APP_URL (origen HTTPS) para el retorno del pago.', en: 'APP_URL (HTTPS origin) is not configured for the payment return.' },
@@ -96,7 +91,7 @@ const CHECKOUT_REASONS: Record<string, { kind: CheckoutKind; match: RegExp; text
 
 const CHECKOUT_PREFIX: Record<CheckoutKind, Bilingual> = {
   policy: { es: 'Reserva no elegible para cobro', en: 'Booking not eligible for payment' },
-  stripe: { es: 'Stripe no generó el enlace de pago', en: 'Stripe did not create the payment link' },
+  stripe: { es: 'El servicio de pagos en línea no está disponible', en: 'Online payments are unavailable' },
 };
 
 /** Clasifica el motivo de checkout_unavailable: política de la reserva vs. falla de Stripe. */
@@ -107,7 +102,7 @@ export function classifyCheckoutUnavailable(httpStatus: number, body: any): { ki
   for (const [reason, def] of Object.entries(CHECKOUT_REASONS)) {
     if (serverMessage && def.match.test(serverMessage)) return { kind: def.kind, reason, serverMessage };
   }
-  // 409 = rechazo de la reserva antes de llamar a Stripe; 5xx/otros = Stripe o servidor.
+  // 409 = rechazo de política; 5xx/otros = servicio no disponible.
   return { kind: httpStatus === 409 ? 'policy' : 'stripe', reason: null, serverMessage };
 }
 
@@ -130,6 +125,7 @@ function describeCheckoutUnavailable(httpStatus: number, body: any, es: boolean)
 /** Traduce la respuesta de error del backend a un mensaje honesto; nunca afirma que se cobró. */
 export function describeLeadPaymentError(httpStatus: number, body: any, es: boolean): string {
   const code = typeof body?.error === 'string' ? body.error : '';
+  if (code === 'stripe_disabled_by_product_policy') return es ? MESSAGES.stripe_disabled_by_product_policy.es : MESSAGES.stripe_disabled_by_product_policy.en;
   if (code === 'checkout_unavailable') return describeCheckoutUnavailable(httpStatus, body, es);
   const known = MESSAGES[code];
   if (known) return es ? known.es : known.en;
