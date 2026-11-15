@@ -5,7 +5,7 @@ import { rememberTurn } from './memoryService';
 import { getFirestoreDb } from './bookingService';
 import { rememberOrganizationalFlow } from './organizationalMemoryService';
 import { resolveTravelerIdentity } from './travelerIdentityService';
-import { adaptTravelerJourney, buildTripJourney } from './travelJourneyOrchestrator';
+import { buildTripJourney } from './travelJourneyOrchestrator';
 import { executeBusinessGoal } from './businessGoalOrchestrator';
 import { redactProviderIdentityForCustomer } from './customerOutboundPrivacy';
 
@@ -290,16 +290,11 @@ async function buildStructuredJourneyAssistant(
     specialRequests: request.specialRequests || undefined,
     language
   };
-  const existingJourneyId = clean(payload.context?.existingJourneyId, 120);
-  let journey: any;
-  if (existingJourneyId) {
-    const adapted = await adaptTravelerJourney(existingJourneyId, journeyInput);
-    journey = adapted?.status === 'not_found'
-      ? await buildTripJourney(journeyInput)
-      : adapted;
-  } else {
-    journey = await buildTripJourney(journeyInput);
-  }
+  // Customer Intake is a public channel. Never adapt a persisted journey
+  // from an ID supplied inside the public request body. A new isolated journey
+  // is created instead; continuing an existing journey requires its own
+  // authenticated route and owner/capability proof.
+  const journey: any = await buildTripJourney(journeyInput);
 
   const missingForQuote = request.requestQuote ? missingQuoteInputs(request, payload) : [];
   let workflow: any = null;
