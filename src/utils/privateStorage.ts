@@ -30,6 +30,7 @@ export const PERSONAL_STORAGE_KEYS = [
   'crt_active_journey',
   'crt_journey_id',
   'crt_journey_session',
+  'crt_journey_access_token',
   'crt-counter-session',
   'crt-counter-widget-session',
   'costa_rica_custom_funnel_draft',
