@@ -11,7 +11,6 @@ const base: CommercialReadinessInput = {
   slots: [{ tourId: 'tour1', providerId: 'p1', date: '2026-10-31', time: '08:00', active: true, maxCapacity: 10, bookedSeats: 2 }],
   emailTransportConfigured: true,
   paypalCredentialsConfigured: false,
-  stripeCredentialsConfigured: true,
   leadAutoFollowUpEnabled: false,
 };
 
