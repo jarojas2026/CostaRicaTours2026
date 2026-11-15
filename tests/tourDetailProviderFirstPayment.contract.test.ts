@@ -5,12 +5,13 @@ import path from 'node:path';
 
 const source = fs.readFileSync(path.join(process.cwd(), 'src/components/TourDetailModal.tsx'), 'utf8');
 
-test('tour booking waits for provider evidence before Stripe or PayPal', () => {
+test('tour booking waits for provider evidence before any existing online payment flow', () => {
   const waitIndex = source.indexOf('await waitForProviderResponse()');
   const paymentIndex = source.indexOf('await continueToOnlinePayment(bookingId)');
   assert.ok(waitIndex > 0, 'provider polling must exist');
   assert.ok(paymentIndex > waitIndex, 'online payment must occur after provider polling');
   assert.match(source, /providerResult !== 'confirmed'/);
+  assert.doesNotMatch(source, /stripe|\/api\/stripe|checkout\.sessions/i);
 });
 
 test('provider polling replays the same public booking request idempotently', () => {
