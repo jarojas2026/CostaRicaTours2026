@@ -206,9 +206,12 @@ export default function App() {
       try {
         const sessionId = detail.sessionId || getPersonalItem('crt_customer_session') || `web_${globalThis.crypto?.randomUUID?.() || Date.now().toString(36)}`;
         setPersonalItemInScope(scopeAtRequest, 'crt_customer_session', sessionId);
+        const intakeHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        const signedTraveler = auth.currentUser;
+        if (signedTraveler) intakeHeaders.Authorization = 'Bearer ' + await signedTraveler.getIdToken();
         const response = await fetch('/api/customer-intake', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: intakeHeaders,
           body: JSON.stringify({
             ...detail,
             message,
@@ -226,6 +229,9 @@ export default function App() {
           setIntakeEscalated(Boolean(data.decision?.escalated));
           setIntakeHandoffUrl(data.customer?.handoffUrl);
           setIntakeId(data.intakeId || '');
+        }
+        if (data.journey?.accessToken) {
+          setPersonalItemInScope(scopeAtRequest, 'crt_journey_access_token', String(data.journey.accessToken));
         }
         if (data.journey?.journeyId) {
           setPersonalItemInScope(scopeAtRequest, 'crt_active_journey', String(data.journey.journeyId));
