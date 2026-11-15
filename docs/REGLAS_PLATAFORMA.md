@@ -184,7 +184,7 @@ Investigación del 25-oct-2026 (datos de GitHub). Nada de esto está instalado n
 | Uso | Recomendado | Licencia |
 |---|---|---|
 | Traducción y SEO de la web | react-i18next, Vike | MIT — corren en el frontend actual |
-| Pagos | stripe-node | MIT |
+| Pagos | Sin SDK de pasarela habilitado | — |
 | CMS de catálogo | Payload / Strapi | MIT |
 | Bandeja WhatsApp/web/email | Chatwoot | MIT (carpeta `enterprise/` aparte) |
 | Entradas / eventos | Hi.Events, pretix | ⚠️ AGPL-3.0 (Hi.Events exige "Powered by") |
