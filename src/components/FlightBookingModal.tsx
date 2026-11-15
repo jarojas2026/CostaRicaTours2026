@@ -34,6 +34,7 @@ export const FlightBookingModal: React.FC<FlightBookingModalProps> = ({
   const [passengersCount, setPassengersCount] = useState(1);
   const [selectedCabin, setSelectedCabin] = useState<'Economy' | 'Business'>(flight.cabinClass === 'Business' ? 'Business' : 'Economy');
   const [seatPreference, setSeatPreference] = useState<'window' | 'aisle' | 'extra_legroom'>('window');
+  const [paymentMethod, setPaymentMethod] = useState<'pay_at_pickup'>('pay_at_pickup');
   
   // Add-on options
   const [includeAirportTransfer, setIncludeAirportTransfer] = useState(false);
