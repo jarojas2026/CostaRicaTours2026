@@ -173,13 +173,14 @@ export async function executeAgentTool(
 ): Promise<any> {
   // Fase C: el contexto lo pone el servidor (sesión, mensaje literal del cliente, canal).
   if (isPhaseCTool(String(name))) return executePhaseCTool(name as any, args || {}, context);
-  const result = await executeAgentToolUnredacted(name, args);
+  const result = await executeAgentToolUnredacted(name, args, context);
   return redactToolResultForClient(String(name), result);
 }
 
 async function executeAgentToolUnredacted(
   name: keyof typeof AGENT_TOOL_REGISTRY,
-  args: Record<string, any>
+  args: Record<string, any>,
+  context: AgentToolContext = {}
 ): Promise<any> {
   switch (name) {
     case 'search_operator_tours':
@@ -382,7 +383,7 @@ async function executeAgentToolUnredacted(
       let journey: any = null;
       if (journeyId) {
         const { getTravelerJourney } = await import('./travelJourneyOrchestrator');
-        journey = await getTravelerJourney(journeyId);
+        journey = await getTravelerJourney(journeyId, context.journeyAccess);
       }
 
       const memory = sessionId ? await getOperationalMemory(sessionId) : null;
@@ -468,7 +469,7 @@ async function executeAgentToolUnredacted(
         selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
         language: args.language === 'en' ? 'en' : 'es'
-      });
+      }, context.journeyAccess);
     case 'adapt_trip_journey':
       if (!args.journeyId) throw new Error('journeyId requerido');
       return adaptTravelerJourney(String(args.journeyId), {
@@ -493,7 +494,7 @@ async function executeAgentToolUnredacted(
         selectedTourIds: Array.isArray(args.selectedTourIds) ? args.selectedTourIds.map((x: unknown) => String(x)) : undefined,
         activities: Array.isArray(args.activities) ? args.activities.map((x: unknown) => String(x)) : undefined,
         language: args.language === 'en' ? 'en' : undefined
-      });
+      }, context.journeyAccess);
     case 'validate_trip_plan':
       return validateTripPlan({
         days: Number(args.days),
