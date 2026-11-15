@@ -72,3 +72,32 @@ test('guest capability is stored in private storage and sent only as a request h
   assert.match(component, /setPersonalItemInScope\(scope, 'crt_journey_access_token'/);
   assert.match(component, /Authorization = 'Bearer ' \+ await user\.getIdToken\(\)/);
 });
+
+test('public intake and trip planner require a server-signed chat session before using memory', () => {
+  const intakeRoute = read('backend', 'routes', 'intake.ts');
+  const journeyRoute = read('backend', 'routes', 'journey.ts');
+  const app = read('src', 'App.tsx');
+  const planner = read('src', 'components', 'FullTripJourneyBuilder.tsx');
+  assert.match(intakeRoute, /verifyChatSessionAccess\(requestedSessionId, signedChatToken\)/);
+  assert.match(intakeRoute, /sessionId: verifiedSessionId/);
+  assert.match(journeyRoute, /verifyChatSessionAccess\(requestedSessionId, chatToken\)/);
+  assert.match(app, /fetch\('\/api\/chat\/session', \{ method: 'POST' \}\)/);
+  assert.match(app, /x-chat-session-token': sessionToken/);
+  assert.match(planner, /fetch\('\/api\/chat\/session', \{ method: 'POST', signal: controller\.signal \}\)/);
+  assert.match(planner, /x-chat-session-token': sessionToken/);
+});
+
+test('agent tools use server context, not model-supplied session ids or owner ids', () => {
+  const tools = read('backend', 'agentTools.ts');
+  assert.match(tools, /getOperationalMemory\(sessionId\)/);
+  assert.match(tools, /const sessionId = String\(context\.sessionId \|\| ''\)/);
+  assert.doesNotMatch(tools, /const sessionId = String\(args\.sessionId/);
+  assert.match(tools, /context\.journeyAccess/);
+});
+
+test('raw guest capability is returned to the caller but only its hash is persisted', () => {
+  const source = read('backend', 'travelJourneyOrchestrator.ts');
+  assert.match(source, /persistJourney\(\{ \.\.\.journey, accessControl \}\)/);
+  assert.match(source, /return \{ \.\.\.journey, \.\.\.\(capabilityToken \?/);
+  assert.doesNotMatch(source, /accessControl: \{[^}]*capabilityToken/);
+});
