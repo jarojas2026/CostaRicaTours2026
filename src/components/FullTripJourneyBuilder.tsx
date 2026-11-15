@@ -34,21 +34,26 @@ const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ lan
     if (!id) return;
     const scope = captureStorageScope();
     const controller = startRequest();
-    const headers: Record<string, string> = {};
-    const user = auth.currentUser;
-    if (user) headers.Authorization = 'Bearer ' + await user.getIdToken();
-    else {
-      const capability = getPersonalItem('crt_journey_access_token');
-      if (capability) headers['x-journey-access-token'] = capability;
-    }
-    fetch(`/api/journey/${encodeURIComponent(id)}`, { headers, signal: controller.signal })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
+    void (async () => {
+      try {
+        const headers: Record<string, string> = {};
+        const user = auth.currentUser;
+        if (user) headers.Authorization = 'Bearer ' + await user.getIdToken();
+        else {
+          const capability = getPersonalItem('crt_journey_access_token');
+          if (capability) headers['x-journey-access-token'] = capability;
+        }
+        const response = await fetch(`/api/journey/${encodeURIComponent(id)}`, { headers, signal: controller.signal });
+        const data = response.ok ? await response.json() : null;
         if (isStale(controller, scope)) return;
         if (data?.journey && data.journey.status !== 'not_found') setJourney(data.journey);
-      })
-      .catch(() => undefined)
-      .finally(() => { inflightRef.current.delete(controller); });
+      } catch {
+        // Un journey histórico sin capacidad válida no se recupera por ID.
+      } finally {
+        inflightRef.current.delete(controller);
+      }
+    })();
+    return () => controller.abort();
   }, []);
   async function build() {
     const scope = captureStorageScope();
