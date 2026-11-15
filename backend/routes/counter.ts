@@ -7,7 +7,8 @@
 
 import { redactAssistantReplyMiddleware } from '../assistantContactRedaction';
 import { askCounterDesk, getCounterOperationsSnapshot, organizeCounterDesk } from '../counterDeskService';
-import { createRouter, requireAdmin, counterLimiter } from './shared';
+import { createRouter, requireAdmin, counterLimiter, chatSessionTokenFrom } from './shared';
+import { verifyChatSessionAccess } from '../signedAccessTokens';
 
 /** Counter Digital. */
 export const counterRouter = createRouter();
@@ -19,9 +20,13 @@ export const counterRouter = createRouter();
 // Operaciones internas: snapshot/organización protegidos por autenticación.
 counterRouter.post('/api/counter/ask', counterLimiter, redactAssistantReplyMiddleware, async (req, res) => {
   try {
+    const requestedSessionId = String(req.body?.sessionId || '').trim();
+    const sessionId = verifyChatSessionAccess(requestedSessionId, chatSessionTokenFrom(req))
+      ? requestedSessionId
+      : undefined;
     const result = await askCounterDesk({
       message: req.body?.message,
-      sessionId: req.body?.sessionId,
+      sessionId,
       language: req.body?.language,
       context: req.body?.context
     });
