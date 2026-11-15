@@ -300,7 +300,7 @@ async function loadJourney(journeyId: string): Promise<any> {
   return doc.exists ? { journeyId, ...(doc.data() || {}) } : null;
 }
 
-export async function buildTripJourney(params: JourneyParams, access?: JourneyAccessContext) {
+export async function buildTripJourney(params: JourneyParams, access?: JourneyAccessContext, journeyIdOverride?: string) {
   const days = Math.max(1, Math.min(Number(params.days) || 7, 21));
   const adults = Math.max(0, Math.min(Number(params.adults) || 0, 200));
   const children = Math.max(0, Math.min(Number(params.children) || 0, 200));
@@ -390,7 +390,7 @@ export async function buildTripJourney(params: JourneyParams, access?: JourneyAc
 
   const uniquePlannedTours = catalog.filter(tour => plannedTourIds.includes(String(tour.id)));
   const catalogReferenceSubtotalUSD = uniquePlannedTours.reduce((sum, tour) => sum + Number(tour.priceUSD || 0), 0) * travelers;
-  const journeyId = 'jrn_' + cryptoSafeId();
+  const journeyId = clean(journeyIdOverride, 120) || 'jrn_' + cryptoSafeId();
   const hasDate = Boolean(clean(params.date));
 
   const journey = {
@@ -513,7 +513,7 @@ export async function adaptTravelerJourney(journeyId: string, params: JourneyPar
   const rebuildAccess: JourneyAccessContext = existing.accessControl?.kind === 'firebase_user'
     ? { ownerUid: existing.accessControl.ownerUid }
     : { capabilityToken: String(access?.capabilityToken || '') };
-  const rebuilt = await buildTripJourney(merged, rebuildAccess);
+  const rebuilt = await buildTripJourney(merged, rebuildAccess, journeyId);
   const { accessToken: _accessToken, ...rebuiltJourney } = rebuilt;
   const adapted = {
     ...rebuiltJourney,
