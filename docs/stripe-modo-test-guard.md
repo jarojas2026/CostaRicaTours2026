@@ -1,17 +1,16 @@
-# Stripe deshabilitado en Costa Rica Tours
+# Exclusión total de Stripe en Costa Rica Tours
 
-Estado: **deshabilitado por política del producto**. La plataforma no debe crear sesiones de checkout Stripe, procesar eventos de Stripe ni habilitar Stripe TEST/LIVE como medio de pago. Esta es una decisión de implementación de Costa Rica Tours, no asesoría ni afirmación jurídica general.
+Estado: **excluido por decisión del dueño**. No crear sesiones de checkout, no procesar webhooks, no consultar sesiones, no admitir enlaces ni configurar credenciales Stripe en ningún entorno. Esta es una decisión de producto de Costa Rica Tours, no una afirmación jurídica general.
 
-## Controles
-- `backend/stripeModeGuard.ts`: bloquea cualquier clave Stripe, incluso `sk_test_` y aunque `ALLOW_STRIPE_LIVE=true`.
-- `backend/bookingService.ts`: `getStripe()` invoca el guard antes de crear un cliente.
-- `api/_paymentWebhookIngress.ts`: no valida ni reenvía webhooks Stripe.
-- Las rutas de pago deben responder de forma segura y nunca cambiar el estado de una reserva por una respuesta del navegador.
-- No eliminar integraciones ni datos históricos: conservar el código bloqueado para facilitar auditoría y una decisión futura documentada.
-- No sustituir Stripe por SINPE, PayPal ni otra pasarela automáticamente. Cualquier alternativa requiere evaluación legal/técnica, consentimiento del dueño y pruebas sin cobros reales.
+## Controles verificados en código
+- `backend/stripeModeGuard.ts`: bloquea cualquier clave TEST o LIVE.
+- `backend/bookingService.ts`: el export heredado `getStripe()` siempre devuelve `null`; no importa ni instancia el SDK.
+- `backend/routes/payments.ts`: endpoints heredados responden HTTP 410.
+- `backend/paymentWebhookService.ts` y `backend/paymentWebhookHttpService.ts`: el procesador y handler heredados rechazan Stripe sin mutar reservas.
+- `api/gateway.ts`: el webhook se rechaza en el borde con HTTP 410 antes de leer o reenviar el cuerpo.
+- `src/utils/bookingAttempt.ts`: no permite dominios de checkout Stripe.
+- `vercel.json`: no incluye orígenes Stripe en CSP.
+- Los paquetes SDK se retiraron de los manifiestos activos; los archivos históricos se conservan.
 
-## Pruebas
-`tests/stripeModeGuard.contract.test.ts` comprueba que TEST, LIVE, claves restringidas y `ALLOW_STRIPE_LIVE` quedan bloqueados.
-
-## Reactivación
-No hay bandera de entorno que reactive Stripe. Cualquier reconsideración requiere decisión explícita del dueño, revisión de cumplimiento y un PR nuevo.
+## Compatibilidad histórica
+Los nombres de funciones y rutas antiguas pueden permanecer temporalmente para responder con rechazo determinista. No representan una integración disponible ni una autorización para reactivarla. Cualquier proveedor alternativo requiere evaluación y aprobación explícita del dueño.
