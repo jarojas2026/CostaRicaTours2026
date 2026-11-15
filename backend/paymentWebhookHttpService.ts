@@ -91,29 +91,11 @@ async function finalizeVerifiedWebhook(provider: 'stripe' | 'paypal', result: We
 }
 
 export async function handleStripeWebhook(_req: Request, res: Response): Promise<void> {
-  res.status(503).json({ accepted: false, error: 'Stripe está deshabilitado por política de la plataforma.', code: STRIPE_DISABLED_REASON });
-  return;
-  /* Preservado temporalmente para auditoría; no se ejecuta mientras Stripe esté deshabilitado.
-  const signature = typeof req.headers['stripe-signature'] === 'string' ? req.headers['stripe-signature'] : undefined;
-  const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
-  const correlationId = webhookCorrelationId('stripe', signature?.slice(0, 48));
-  res.setHeader('x-correlation-id', correlationId);
-
-  if (!rawBody) {
-    res.status(400).json({ accepted: false, error: 'Raw body requerido para verificar Stripe.', correlationId });
-    return;
-  }
-
-  try {
-    const result = await processStripeWebhook(rawBody, signature);
-    const lifecycle = await finalizeVerifiedWebhook('stripe', result);
-    res.status(200).json({ ...result, lifecycle, correlationId: webhookCorrelationId('stripe', result.eventId) });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Webhook Stripe rechazado.';
-    console.error('[payment-webhook][stripe]', { correlationId, error: message });
-    res.status(400).json({ accepted: false, error: message, correlationId });
-  }
-  */
+  res.status(410).json({
+    accepted: false,
+    error: 'stripe_disabled_by_product_policy',
+    code: STRIPE_DISABLED_REASON
+  });
 }
 
 export async function handlePayPalWebhook(req: Request, res: Response): Promise<void> {
