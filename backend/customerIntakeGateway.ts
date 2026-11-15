@@ -10,6 +10,8 @@ import { executeBusinessGoal } from './businessGoalOrchestrator';
 import { redactProviderIdentityForCustomer } from './customerOutboundPrivacy';
 
 export interface CustomerIntakePayload {
+  /** Server-derived Firebase UID; never accepted from the public request body. */
+  ownerUid?: string;
   message?: string;
   language?: 'es' | 'en';
   sessionId?: string;
@@ -294,7 +296,7 @@ async function buildStructuredJourneyAssistant(
   // from an ID supplied inside the public request body. A new isolated journey
   // is created instead; continuing an existing journey requires its own
   // authenticated route and owner/capability proof.
-  const journey: any = await buildTripJourney(journeyInput);
+  const journey: any = await buildTripJourney(journeyInput, payload.ownerUid ? { ownerUid: payload.ownerUid } : undefined);
 
   const missingForQuote = request.requestQuote ? missingQuoteInputs(request, payload) : [];
   let workflow: any = null;
@@ -341,6 +343,7 @@ async function buildStructuredJourneyAssistant(
     reply: formatJourneyForCustomer(journey, request, language, workflow, missingForQuote),
     agentId: 'journey_orchestrator',
     journeyId: journey.journeyId,
+    accessToken: journey.accessToken,
     workflow
   };
 }
@@ -501,6 +504,7 @@ export async function processCustomerIntake(payload: CustomerIntakePayload, trus
     },
     journey: journeyAssistant?.journeyId ? {
       journeyId: journeyAssistant.journeyId,
+      ...(journeyAssistant.accessToken ? { accessToken: journeyAssistant.accessToken } : {}),
       workflow: journeyAssistant.workflow || null
     } : undefined,
     operatorNotification: {
