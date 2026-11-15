@@ -279,7 +279,7 @@ async function executeAgentToolUnredacted(
       return findBookingByCodeOrEmail(identifier);
     }
     case 'recall_memory': {
-      const sessionId = String(args.sessionId || '');
+      const sessionId = String(context.sessionId || '');
       if (!sessionId) throw new Error('sessionId requerido');
       const memory = await getOperationalMemory(sessionId);
       const relevant = await retrieveRelevantMemory(sessionId, String(args.query || ''), 8);
@@ -377,7 +377,7 @@ async function executeAgentToolUnredacted(
       return observeProviderSla();
     case 'trip_health_snapshot': {
       const journeyId = String(args.journeyId || '').trim();
-      const sessionId = String(args.sessionId || '').trim();
+      const sessionId = String(context.sessionId || '').trim();
       if (!journeyId && !sessionId) throw new Error('journeyId o sessionId requerido');
 
       let journey: any = null;
@@ -448,7 +448,7 @@ async function executeAgentToolUnredacted(
       });
     case 'build_trip_journey':
       return buildTripJourney({
-        sessionId: args.sessionId ? String(args.sessionId) : undefined,
+        sessionId: context.sessionId || undefined,
         query: args.query ? String(args.query) : '',
         days: Number(args.days),
         travelers: Number(args.travelers),
