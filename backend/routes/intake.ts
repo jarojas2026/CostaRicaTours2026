@@ -11,6 +11,7 @@ import { hasInternalJobToken } from '../internalJobAuth';
 import { processCustomerIntake, enqueueCustomerIntakeJob, processPendingCustomerIntakeJobs } from '../customerIntakeGateway';
 import { getFirestoreDb } from '../bookingService';
 import { withDistributedAutomationLock } from '../cronEngine';
+import { verifyFirebaseUser } from '../authMiddleware';
 import { createRouter, chatLimiter, intakeAdmission } from './shared';
 import { captureLeadInBackground } from '../leadPipeline';
 import { understandConciergeMessage } from '../conciergeUnderstanding';
@@ -40,7 +41,9 @@ customerIntakeRouter.post('/api/customer-intake', chatLimiter, contactFormGuard,
     // Public web intake never trusts channel-prefixed session ids (wa_, voice_,
     // trav_...) or unverified contact data to link to an existing traveler.
     const requestedSessionId = String(req.body?.sessionId || '').trim();
+    const authenticatedTraveler = await verifyFirebaseUser(req);
     const result = await processCustomerIntake({
+      ownerUid: authenticatedTraveler?.uid ? String(authenticatedTraveler.uid) : undefined,
       message: req.body?.message || req.body?.mensaje,
       language: req.body?.language || req.body?.idioma,
       sessionId: /^web_[A-Za-z0-9-]{8,80}$/.test(requestedSessionId) ? requestedSessionId : undefined,
