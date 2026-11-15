@@ -250,6 +250,7 @@ export default function App() {
         }
         if (data.journey?.journeyId) {
           setPersonalItemInScope(scopeAtRequest, 'crt_active_journey', String(data.journey.journeyId));
+          setPersonalItemInScope(scopeAtRequest, 'crt_journey_id', String(data.journey.journeyId));
         }
         detail.onResult?.({
           ok: true,
