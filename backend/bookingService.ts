@@ -15,8 +15,6 @@ import {
   type CollectionReference
 } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
-import Stripe from 'stripe';
-import { assertStripeTestMode } from './stripeModeGuard';
 import { resolveCommerceTour } from './commerceCatalog';
 import { assertServiceDate, reservationQuote, slotAvailability } from './commercePolicy';
 import { getIdempotentResult, idempotencyDocId, normalizeIdempotencyKey, requestFingerprint } from './idempotencyService';
@@ -125,14 +123,9 @@ export function getSlotKey(tourId: string, date: string, time: string): string {
   return `${tourId}_${date}_${cleanTime}`;
 }
 
-let stripeClient: Stripe | null = null;
-export function getStripe(): Stripe | null {
-  if (!stripeClient && process.env.STRIPE_SECRET_KEY) {
-    // Stripe se queda en TEST hasta el lanzamiento: sk_live_/rk_live_ sin ALLOW_STRIPE_LIVE=true lanza.
-    assertStripeTestMode(process.env.STRIPE_SECRET_KEY);
-    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY);
-  }
-  return stripeClient;
+/** Compatibility export: Stripe is permanently unavailable in this product. */
+export function getStripe(): null {
+  return null;
 }
 
 let aiClient: GoogleGenAI | null = null;
@@ -324,25 +317,6 @@ export async function verifyPaymentServerSide(
     }
   }
 
-  if ((paymentMethod === 'credit_card' || paymentMethod === 'stripe') && details.stripeSessionId) {
-    try {
-      const stripe = getStripe();
-      if (stripe) {
-        const session = await stripe.checkout.sessions.retrieve(details.stripeSessionId);
-        if (stripeSessionMatchesBooking(session, expected)) {
-          return {
-            verified: true,
-            status: 'paid',
-            paymentStatus: 'completed',
-            meta: { stripePaymentIntent: session.payment_intent }
-          };
-        }
-        return pending('stripe_session_mismatch_or_unpaid');
-      }
-    } catch (err) {
-      console.error('Error verificando sesión de Stripe:', err);
-    }
-  }
 
   return pending('payment_not_verified');
 }
