@@ -431,7 +431,7 @@ agentToolsRouter.post(['/api/agent/tools/create_booking_and_notify', '/api/agent
 });
 
 // Tool 3: Generador Autónomo de Itinerarios Multidía y Logística
-agentToolsRouter.post('/api/agent/tools/generate_custom_itinerary', async (req, res) => {
+agentToolsRouter.post('/api/agent/tools/generate_custom_itinerary', requireAgentTool, async (req, res) => {
   try {
     const { days, travelers, style, budget, group, language, special_requests } = req.body;
     const itinerary = await generateGeminiItinerary({
