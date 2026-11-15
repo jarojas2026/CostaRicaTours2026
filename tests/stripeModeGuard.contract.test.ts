@@ -35,12 +35,12 @@ test('ALLOW_STRIPE_LIVE nunca puede reactivar Stripe', () => {
   }
 });
 
-test('getStripe no puede crear cliente y los routes no crean clientes alternativos', () => {
+test('getStripe siempre devuelve null y el runtime no importa ni instancia el SDK', () => {
   const booking = readFileSync('backend/bookingService.ts', 'utf8');
   const body = booking.slice(booking.indexOf('export function getStripe()'), booking.indexOf('let aiClient'));
-  assert.match(body, /assertStripeTestMode\(process\.env\.STRIPE_SECRET_KEY\)/);
-  assert.ok(body.indexOf('assertStripeTestMode') < body.indexOf('new Stripe('));
-  assert.doesNotMatch(readFileSync('backend/routes/payments.ts', 'utf8'), /new Stripe\(/);
+  assert.match(body, /return null/);
+  assert.doesNotMatch(booking, /from ['"]stripe['"]|new Stripe\(/);
+  assert.doesNotMatch(readFileSync('backend/routes/payments.ts', 'utf8'), /checkout\.sessions\.(create|retrieve)/);
 });
 
 test('ingress de webhook falla cerrado sin crear cliente ni aceptar eventos Stripe', () => {
