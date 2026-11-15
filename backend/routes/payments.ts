@@ -14,17 +14,15 @@ import { handleStripeWebhook, handlePayPalWebhook } from '../paymentWebhookHttpS
 import { executeSinpeVerification } from '../sinpeService';
 import { createRouter, paymentLimiter } from './shared';
 
-/** Webhooks firmados de Stripe y PayPal. */
+/** Webhook heredado de Stripe retirado (410) y webhook PayPal independiente. */
 export const paymentWebhooksRouter = createRouter();
 
-// Signed payment webhooks. Stripe uses the byte-exact rawBody captured by
-// express.json({ verify }) in backend/app.ts; PayPal verifies its provider signature before
-// any booking/payment state is mutated. These routes intentionally do not use
-// application auth because the payment-provider signature is the authorization.
+// The Stripe route is retained only as a retired 410 response. PayPal keeps its
+// existing signature-verification path; neither route trusts browser payment claims.
 paymentWebhooksRouter.post('/api/webhooks/stripe', handleStripeWebhook);
 paymentWebhooksRouter.post('/api/webhooks/paypal', handlePayPalWebhook);
 
-/** Checkout Stripe/PayPal y retornos de pago. */
+/** Endpoints heredados de pago (Stripe retirado; PayPal se mantiene independiente). */
 export const checkoutRouter = createRouter();
 
 // ==========================================
@@ -32,9 +30,7 @@ export const checkoutRouter = createRouter();
 // ==========================================
 
 /**
- * Checkout Stripe (TEST mientras ALLOW_STRIPE_LIVE !== 'true') para una reserva pendiente.
- * Misma lógica que antes vivía dentro de POST /api/stripe/create-checkout-session; se exporta
- * para reutilizarla desde POST /api/admin/leads/:id/payment-link sin duplicar la llamada a Stripe.
+ * Contrato heredado conservado por compatibilidad; siempre responde 410 y no llama proveedores.
  */
 export async function createStripeCheckoutForBooking(_bookingId: unknown): Promise<{ status: number; body: any }> {
   return {
