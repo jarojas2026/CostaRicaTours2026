@@ -60,9 +60,24 @@ const FullTripJourneyBuilderComponent: React.FC<{ language: Language }> = ({ lan
     const controller = startRequest();
     setLoading(true); setError('');
     try {
-      const sessionId = getPersonalItem('crt_journey_session') || 'traveler_' + Math.random().toString(36).slice(2);
-      setPersonalItemInScope(scope, 'crt_journey_session', sessionId);
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      let sessionId = getPersonalItem('crt_customer_session');
+      let sessionToken = getPersonalItem('crt_chat_session_token');
+      if (!sessionId || !sessionToken) {
+        const sessionResponse = await fetch('/api/chat/session', { method: 'POST', signal: controller.signal });
+        const sessionData = await sessionResponse.json();
+        if (!sessionResponse.ok || !sessionData.sessionId || !sessionData.sessionToken) {
+          throw new Error('No se pudo iniciar una sesión privada de chat.');
+        }
+        if (isStale(controller, scope)) return;
+        sessionId = String(sessionData.sessionId);
+        sessionToken = String(sessionData.sessionToken);
+        setPersonalItemInScope(scope, 'crt_customer_session', sessionId);
+        setPersonalItemInScope(scope, 'crt_chat_session_token', sessionToken);
+      }
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-chat-session-token': sessionToken
+      };
       const user = auth.currentUser;
       if (user) headers.Authorization = 'Bearer ' + await user.getIdToken();
       const response = await fetch('/api/journey/build', { method:'POST', headers, body:JSON.stringify({...form,sessionId,language}), signal: controller.signal });
