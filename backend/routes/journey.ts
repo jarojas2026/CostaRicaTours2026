@@ -38,7 +38,8 @@ export const aiJourneyRouter = createRouter();
 /* 🧭 FULL TRAVEL JOURNEY — MEMORY + CATALOG + LIVE DATA + SALES */
 aiJourneyRouter.post('/api/ai/journey', aiAdmission.middleware, async (req, res) => {
   try {
-    const result = await buildTripJourney({ ...(req.body || {}), sessionId: (await journeyAccess(req)).sessionId }, await journeyAccess(req));
+    const access = await journeyAccess(req);
+    const result = await buildTripJourney({ ...(req.body || {}), sessionId: access.sessionId }, access);
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'No se pudo construir el viaje.' });
@@ -96,7 +97,8 @@ aiJourneyRouter.get('/api/ai/journey/:journeyId', async (req, res) => {
 
 aiJourneyRouter.patch('/api/ai/journey/:journeyId', aiAdmission.middleware, async (req, res) => {
   try {
-    const result = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {}, await journeyAccess(req));
+    const { sessionId: _untrustedSessionId, ...params } = req.body || {};
+    const result = await adaptTravelerJourney(String(req.params.journeyId || ''), params, await journeyAccess(req));
     if (!result || result.status === 'not_found') return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
     res.json({ success: true, journey: result });
   } catch (err: any) {
@@ -111,7 +113,8 @@ export const journeyRouter = createRouter();
 // authoritative catalog, live weather, availability, itinerary and sales next step.
 journeyRouter.post('/api/journey/build', async (req, res) => {
   try {
-    const result = await buildTripJourney(req.body || {}, await journeyAccess(req));
+    const access = await journeyAccess(req);
+    const result = await buildTripJourney({ ...(req.body || {}), sessionId: access.sessionId }, access);
     res.json({ success: true, journey: result });
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message || 'No se pudo construir el viaje' });
@@ -130,7 +133,8 @@ journeyRouter.get('/api/journey/:journeyId', async (req, res) => {
 
 journeyRouter.post('/api/journey/:journeyId/adapt', async (req, res) => {
   try {
-    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), req.body || {}, await journeyAccess(req));
+    const { sessionId: _untrustedSessionId, ...params } = req.body || {};
+    const journey = await adaptTravelerJourney(String(req.params.journeyId || ''), params, await journeyAccess(req));
     if (!journey || journey.status === 'not_found') return res.status(404).json({ success: false, error: 'Viaje no encontrado.' });
     res.json({ success: true, journey });
   } catch (err: any) {
