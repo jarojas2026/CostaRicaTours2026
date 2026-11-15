@@ -272,7 +272,8 @@ async function buildStructuredJourneyAssistant(
   ].filter(Boolean).join(' · ');
 
   const journeyInput = {
-    sessionId,
+    // Customer Intake session ids are not chat-session capabilities; never use
+    // them to load another conversation's private operational memory.
     query,
     days: request.days,
     travelers: request.travelers,
