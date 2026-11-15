@@ -174,7 +174,7 @@ const AIAssistantComponent: React.FC<AIAssistantProps> = ({
   const [inChatName, setInChatName] = useState('');
   const [inChatEmail, setInChatEmail] = useState('');
   const [inChatPhone, setInChatPhone] = useState('');
-  const [inChatPaymentMethod, setInChatPaymentMethod] = useState<'credit_card' | 'sinpe_movil' | 'paypal' | 'pay_at_pickup'>('pay_at_pickup');
+  const [inChatPaymentMethod, setInChatPaymentMethod] = useState<'sinpe_movil' | 'paypal' | 'pay_at_pickup'>('pay_at_pickup');
   const [isSubmittingInChatBooking, setIsSubmittingInChatBooking] = useState(false);
 
   const handleToggleSpeak = (msgId: string, text: string) => {
