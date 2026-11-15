@@ -26,6 +26,7 @@ export interface KeyValueStorage {
 /** Claves personales exactas usadas por la app (nombre base, sin uid). */
 export const PERSONAL_STORAGE_KEYS = [
   'crt_chat_session_v2',
+  'crt_chat_session_token',
   'crt_customer_session',
   'crt_active_journey',
   'crt_journey_id',
