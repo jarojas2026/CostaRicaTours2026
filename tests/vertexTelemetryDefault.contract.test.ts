@@ -10,5 +10,6 @@ test('Anthropic Vertex client keeps OpenTelemetry tracing off by default (vertex
   assert.ok(guard > 0, 'falta el default seguro ANTHROPIC_OPEN_TELEMETRY=false');
   assert.ok(guard < client, 'el default debe fijarse antes de crear el cliente');
   const pkg = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
-  assert.match(pkg.dependencies['@anthropic-ai/vertex-sdk'], /0\.21/);
+  // 0.21+ trae tracing OpenTelemetry nativo; el default seguro aplica a esas versiones.
+  assert.match(pkg.dependencies['@anthropic-ai/vertex-sdk'], /^\^?0\.(2[1-9]|[3-9]\d)\./);
 });
