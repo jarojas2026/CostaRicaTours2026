@@ -189,7 +189,7 @@ async function runTest() {
       specialRequests: `Origen: ${sc.country}. Transporte: ${sc.transport}. Solicitud de prueba automatizada #2026.`,
       totalUSD: sc.totalUSD,
       currency: 'USD',
-      paymentMethod: 'credit_card',
+      paymentMethod: 'pay_at_pickup',
       customerName: sc.customerName,
       customerEmail: sc.customerEmail,
       customerPhone: sc.customerPhone,

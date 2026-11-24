@@ -32,9 +32,6 @@ export const API_CONFIG = {
 
   // Pasarelas de pago y servicios auxiliares
   pagos: {
-    stripe: {
-      publicKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_STRIPE_PUBLIC_KEY) || ''
-    },
     paypal: {
       clientId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PAYPAL_CLIENT_ID) || ''
     }

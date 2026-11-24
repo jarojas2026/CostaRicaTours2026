@@ -6,7 +6,6 @@ import gatewayHandler, {
 import {
   readRawRequestBody,
   translatePayPalWebhook,
-  translateStripeWebhook,
   type PaymentWebhookTranslation,
 } from './_paymentWebhookIngress.js';
 
@@ -55,7 +54,6 @@ function translatedGatewayRequest(
 }
 
 async function handlePaymentWebhook(
-  forwardedPath: string,
   req: VercelRequest,
   res: VercelResponse,
 ) {
@@ -66,11 +64,7 @@ async function handlePaymentWebhook(
   const rawBody = await readRawRequestBody(req);
   let translation: PaymentWebhookTranslation;
 
-  if (forwardedPath === 'webhooks/stripe') {
-    translation = await translateStripeWebhook(rawBody, req.headers);
-  } else {
-    translation = await translatePayPalWebhook(rawBody, req.headers);
-  }
+  translation = await translatePayPalWebhook(rawBody, req.headers);
 
   res.setHeader('cache-control', 'no-store, max-age=0');
   res.setHeader('x-crt-webhook-provider', translation.provider);
@@ -93,8 +87,8 @@ async function handlePaymentWebhook(
     });
   }
 
-  // The public edge validates the provider signature. The private Cloud Run
-  // endpoint then independently retrieves the Stripe/PayPal record, checks the
+  // The public edge validates the provider signature. The private backend
+  // endpoint then independently retrieves the PayPal record, checks the
   // booking reference, amount and currency, and performs the authoritative
   // Firestore transition. No browser or webhook payload can mark a booking paid.
   const translated = translatedGatewayRequest(req, translation.targetPath, translation.body);
@@ -146,9 +140,8 @@ async function handleLegacyAgentAvailability(req: VercelRequest, res: VercelResp
  *
  * Payment webhooks are intentionally intercepted before the generic request
  * body helper is touched. Vercel exposes the body lazily; reading the underlying
- * IncomingMessage stream here preserves the exact bytes required by Stripe and
- * PayPal signature verification. Valid payment events are translated to the
- * existing private reconciliation endpoints, which remain the source of truth.
+ * IncomingMessage stream here preserves the exact bytes required by PayPal signature verification. Valid PayPal
+ * events are translated to the existing private reconciliation endpoint.
  *
  * Legacy agent availability aliases are translated to the same authoritative
  * Firestore-backed availability endpoint used by the customer-facing product.
@@ -163,8 +156,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const currentUrl = new URL(req.url || '/api/gateway', 'https://gateway.invalid');
     currentUrl.searchParams.delete(INTERNAL_PATH_QUERY);
 
-    if (forwardedPath === 'webhooks/stripe' || forwardedPath === 'webhooks/paypal') {
-      return await handlePaymentWebhook(forwardedPath, req, res);
+    if (forwardedPath === 'webhooks/stripe') {
+      return res.status(410).json({ success: false, accepted: false, error: 'stripe_disabled_by_product_policy' });
+    }
+    if (forwardedPath === 'webhooks/paypal') {
+      return await handlePaymentWebhook(req, res);
     }
 
     // The legacy itinerary endpoint creates a synthetic fixed-price record and

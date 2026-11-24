@@ -1,45 +1,16 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const cors = require("cors")({ origin: true }); // Permitir peticiones desde Netlify o cualquier origen
 
 admin.initializeApp();
 
-// ==========================================
-// 🚀 ENDPOINT: STRIPE CHECKOUT
-// ==========================================
+// Stripe is excluded by product policy. Keep this legacy function name only
+// to return a deterministic retirement response to any stale caller.
 exports.createStripeCheckout = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    try {
-      const { tourId, tourName, totalUSD, customerEmail, date, passengers, returnUrl } = req.body;
-      
-      if (!process.env.STRIPE_SECRET_KEY) {
-        console.warn("⚠️ STRIPE_SECRET_KEY no configurada en Cloud Functions.");
-        return res.status(503).json({ error: "Stripe no está configurado. No se simula un pago." });
-      }
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'usd',
-            product_data: { name: tourName || "Tour Costa Rica Tours" },
-            unit_amount: Math.round(totalUSD * 100),
-          },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: `${returnUrl}?booking=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${returnUrl}?booking=canceled`,
-        customer_email: customerEmail,
-      });
-
-      res.json({ url: session.url, id: session.id });
-    } catch (err) {
-      console.error("Error en Stripe:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
+  cors(req, res, () => res.status(410).json({
+    error: "stripe_disabled_by_product_policy",
+    message: "Online card payments are unavailable on Costa Rica Tours."
+  }));
 });
 
 // ==========================================

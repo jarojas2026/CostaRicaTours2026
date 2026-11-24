@@ -1,7 +1,7 @@
 # Plan de despliegue internacional a costo $0 (borrador)
 
 > Fecha: 26-oct-2026. Estado: **plan, nada desplegado**. Solo documentación.
-> Reglas vigentes (AGENTS.md §00): costo $0, no borrar nada, Stripe solo TEST, no tocar `api/[...path].ts`, `Header` ni `BottomNav`, no fusionar sin OK de Gabriel, nada de deploys a GCP sin autorización escrita.
+> Reglas vigentes (AGENTS.md §00): costo $0, no borrar nada, Stripe totalmente excluido, no tocar `api/[...path].ts`, `Header` ni `BottomNav`, no fusionar sin OK de Gabriel, nada de deploys a GCP sin autorización escrita.
 
 ## 0. Situación actual
 - Frontend: Vercel plan **Hobby** → https://costaricatours2026.vercel.app. `/api` se reenvía a Cloud Run (`CLOUD_RUN_BACKEND_URL`).
@@ -40,7 +40,7 @@ Configuración: mínimo 0 instancias, facturación por solicitud, Container/On-D
 ### Recomendación
 1. **Backend: opción A** (Cloud Run optimizado), activada solo cuando Gabriel autorice por escrito pagar la deuda y reactivar facturación.
 2. **Frontend**: Vercel Hobby no permite vender. Para mantener $0 de forma legítima, evaluar mover el frontend estático a **Cloudflare Pages o Netlify Free** (sin tocar código de la app), o pasar a Vercel Pro ($20/mes) cuando entre la primera venta.
-3. Hasta entonces, el sitio puede seguir como **vitrina sin pagos reales** (Stripe TEST).
+3. Hasta entonces, el sitio puede seguir como **vitrina sin pagos en línea.
 
 ## 2. Checklist de preparación internacional
 
@@ -66,18 +66,18 @@ Configuración: mínimo 0 instancias, facturación por solicitud, Container/On-D
 ### Aviso legal y privacidad
 - [x] Rutas `/terms`, `/privacy`, `/cancellation`, `/sinac-escnna` y banner de cookies existen.
 - [ ] Verificar datos de empresa, licencias ICT y fechas publicados (issue #193).
-- [ ] Privacidad alineada a Ley 8968 (Costa Rica) y GDPR/CCPA para clientes de EE. UU. y Europa: responsable, finalidades, encargados (Firebase, Groq, Stripe, Sentry), derechos ARCO y contacto.
+- [ ] Privacidad alineada a Ley 8968 (Costa Rica) y GDPR/CCPA para clientes de EE. UU. y Europa: responsable, finalidades, encargados (Firebase, Groq, Sentry), derechos ARCO y contacto.
 - [ ] Consentimiento de cookies real (no cargar analítica antes de aceptar).
 
 ### Pagos
-- [ ] Stripe permanece en **TEST** (guard `ALLOW_STRIPE_LIVE`) hasta que Gabriel decida. Pasar a LIVE requiere: cuenta verificada, webhook de producción, prueba E2E (#174) y su OK escrito.
+- [x] Stripe permanece totalmente excluido: no TEST/LIVE, SDK operativo, checkout, webhook, retorno, enlaces ni credenciales.
 - [ ] Pagos a proveedores: solo manuales, registrados por el dueño. Nunca SINPE ni transferencias por cuenta del cliente.
 
 ### Variables de entorno (sin valores; los secretos van al gestor de secretos)
 - Núcleo: `APP_URL`, `PUBLIC_BASE_URL`, `GCP_PROJECT`/`GOOGLE_CLOUD_PROJECT`, `FIREBASE_PROJECT_ID`, `FIRESTORE_DATABASE_ID`, `CLOUD_RUN_BACKEND_URL` (en el hosting del frontend).
 - Seguridad: `PAYMENT_HMAC_SECRET`, `OPERATOR_API_KEY`, `WEBHOOK_SECRET`, `PROVIDER_ACTION_SECRET`, `AGENT_INTERNAL_TOKEN`, `CUSTOMER_INTAKE_JOB_TOKEN`.
 - IA: clave de Groq (y `GEMINI_API_KEY` si se usa).
-- Pagos: claves Stripe **TEST**, `ALLOW_STRIPE_LIVE` sin definir; PayPal en `sandbox`.
+- Pagos: no configurar Stripe. Cualquier proveedor alternativo requiere evaluación y aprobación explícita antes de habilitarse.
 - Operación: `OWNER_EMAIL`, `ADMIN_ALERT_EMAIL`, `ENABLE_PROVIDER_PAYOUTS=false`, `SENTRY_DSN`/`VITE_SENTRY_DSN`.
 - [ ] Revisar `.env.example` y dejar fuera del frontend todo lo que no empiece con `VITE_`.
 
@@ -89,7 +89,7 @@ Configuración: mínimo 0 instancias, facturación por solicitud, Container/On-D
 5. **Reglas de Firestore** de #455 sin publicar (requiere GCP activo).
 6. Dominio propio aún no conectado; sitemap/robots/canonical apuntan a `*.vercel.app`.
 7. Leads de prueba en producción (#331): marcarlos como prueba (regla de no borrar).
-8. Stripe en TEST: no hay cobro real todavía (decisión de Gabriel).
+8. Stripe excluido: no hay cobros en línea habilitados.
 
 ## 4. PRs abiertos pendientes del OK de Gabriel
 - **#465** `fix/codex-revision-pr446-452`: saca el libro `supplierPayouts` de rutas de operador y limita el panel de intake a la consulta vigente. Mergeable, sin conflictos. Recomendado fusionar (mejora seguridad).
@@ -97,7 +97,7 @@ Configuración: mínimo 0 instancias, facturación por solicitud, Container/On-D
 - No se fusiona ninguno sin autorización explícita.
 
 ## 5. Orden propuesto (cuando Gabriel autorice)
-1. Fusionar #465. 2. PR: `deploy-cloud-run.yml` solo manual. 3. Rotar credencial (#317). 4. Gabriel paga deuda y reactiva facturación con alerta de $1, scanning apagado y retención de 2 imágenes. 5. Deploy manual único y verificación de `/api/health`. 6. Publicar reglas Firestore. 7. Mover frontend a hosting gratuito comercial o Vercel Pro y conectar `mycostaricatours.com`. 8. SEO y Search Console. 9. Prueba E2E en TEST. 10. Decisión de Gabriel sobre Stripe LIVE.
+1. Fusionar #465. 2. PR: `deploy-cloud-run.yml` solo manual. 3. Rotar credencial (#317). 4. Gabriel paga deuda y reactiva facturación con alerta de $1, scanning apagado y retención de 2 imágenes. 5. Deploy manual único y verificación de `/api/health`. 6. Publicar reglas Firestore. 7. Mover frontend a hosting gratuito comercial o Vercel Pro y conectar `mycostaricatours.com`. 8. SEO y Search Console. 9. Revisar opciones de pago por separado, solo si Gabriel lo autoriza.
 
 ## Fuentes (consultadas 26-oct-2026)
 - Cloud Run pricing: https://cloud.google.com/run/pricing

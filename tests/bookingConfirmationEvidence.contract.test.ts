@@ -27,13 +27,9 @@ test('legacy GET confirmation endpoint is retired and cannot change payment stat
 });
 
 test('payment returns validate provider references and never fabricate a booking in the UI', () => {
-  assert.match(server, /client_reference_id: booking\.bookingId/);
-  assert.match(server, /metadata: \{ bookingId: booking\.bookingId \}/);
   assert.match(server, /custom_id: booking\.bookingId/);
-  assert.match(server, /app\.post\('\/api\/payments\/stripe\/return'/);
-  assert.match(server, /session\.payment_status !== 'paid'/);
+
   assert.match(server, /app\.post\('\/api\/payments\/paypal\/return'/);
   assert.doesNotMatch(app, /bookingId:\s*["']VERIFICANDO/);
-  assert.match(app, /\/api\/payments\/stripe\/return/);
   assert.match(app, /\/api\/payments\/paypal\/return/);
 });

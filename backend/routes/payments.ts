@@ -8,23 +8,21 @@
 import express from 'express';
 import { requireOperator } from '../authMiddleware';
 import { checkoutQuote, checkoutOrigin } from '../commercePolicy';
-import { getStripe, getBookingById, updateBookingStatus } from '../bookingService';
+import { getBookingById, updateBookingStatus } from '../bookingService';
 import { STRIPE_DISABLED_REASON } from '../stripeModeGuard';
 import { handleStripeWebhook, handlePayPalWebhook } from '../paymentWebhookHttpService';
 import { executeSinpeVerification } from '../sinpeService';
 import { createRouter, paymentLimiter } from './shared';
 
-/** Webhooks firmados de Stripe y PayPal. */
+/** Webhook heredado de Stripe retirado (410) y webhook PayPal independiente. */
 export const paymentWebhooksRouter = createRouter();
 
-// Signed payment webhooks. Stripe uses the byte-exact rawBody captured by
-// express.json({ verify }) in backend/app.ts; PayPal verifies its provider signature before
-// any booking/payment state is mutated. These routes intentionally do not use
-// application auth because the payment-provider signature is the authorization.
+// The Stripe route is retained only as a retired 410 response. PayPal keeps its
+// existing signature-verification path; neither route trusts browser payment claims.
 paymentWebhooksRouter.post('/api/webhooks/stripe', handleStripeWebhook);
 paymentWebhooksRouter.post('/api/webhooks/paypal', handlePayPalWebhook);
 
-/** Checkout Stripe/PayPal y retornos de pago. */
+/** Endpoints heredados de pago (Stripe retirado; PayPal se mantiene independiente). */
 export const checkoutRouter = createRouter();
 
 // ==========================================
@@ -32,53 +30,17 @@ export const checkoutRouter = createRouter();
 // ==========================================
 
 /**
- * Checkout Stripe (TEST mientras ALLOW_STRIPE_LIVE !== 'true') para una reserva pendiente.
- * Misma lógica que antes vivía dentro de POST /api/stripe/create-checkout-session; se exporta
- * para reutilizarla desde POST /api/admin/leads/:id/payment-link sin duplicar la llamada a Stripe.
+ * Contrato heredado conservado por compatibilidad; siempre responde 410 y no llama proveedores.
  */
 export async function createStripeCheckoutForBooking(_bookingId: unknown): Promise<{ status: number; body: any }> {
-  return { status: 503, body: { error: 'Stripe no está habilitado en Costa Rica Tours.', code: STRIPE_DISABLED_REASON } };
-  /* Preservado temporalmente para auditoría; no se ejecuta mientras Stripe esté deshabilitado.
-  try {
-    const booking = await getBookingById(String(bookingId || ''));
-    if (!booking || booking.paymentStatus === 'completed') {
-      return { status: 409, body: { error: 'La reserva no existe o ya tiene un pago verificado.' } };
+  return {
+    status: 410,
+    body: {
+      error: 'stripe_disabled_by_product_policy',
+      code: STRIPE_DISABLED_REASON,
+      message: 'Los pagos con tarjeta en línea no están disponibles.'
     }
-    let payment;
-    try { payment = checkoutQuote(booking); }
-    catch (error: any) { return { status: 409, body: { error: error.message } }; }
-    const returnOrigin = checkoutOrigin();
-    const stripe = getStripe();
-    if (!stripe) {
-      console.error('🔴 STRIPE_SECRET_KEY no configurada. Se rechaza el intento de pago.');
-      return { status: 503, body: { error: 'Pagos no disponibles: Stripe no está configurado en el servidor.' } };
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: { name: booking.tourName || 'Tour Costa Rica Tours' },
-            unit_amount: payment.totalCents
-          },
-          quantity: 1
-        }
-      ],
-      mode: 'payment',
-      client_reference_id: booking.bookingId,
-      metadata: { bookingId: booking.bookingId },
-      success_url: `${returnOrigin}/?booking=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${returnOrigin}/?booking=canceled`,
-      customer_email: booking.customerEmail || undefined
-    });
-    return { status: 200, body: { url: session.url, id: session.id } };
-  } catch (err: any) {
-    console.error('Error en Stripe:', err);
-    return { status: 500, body: { error: err.message } };
-  }
-  */
+  };
 }
 
 checkoutRouter.post('/api/stripe/create-checkout-session', paymentLimiter, async (req, res) => {
@@ -163,31 +125,8 @@ checkoutRouter.post('/api/paypal/create-order', paymentLimiter, async (req, res)
 // They retrieve the provider record, validate its booking reference and amount,
 // then move only that pending booking to `paid`. Provider confirmation remains
 // a separate lifecycle transition.
-checkoutRouter.post('/api/payments/stripe/return', paymentLimiter, async (req, res) => {
-  try {
-    const sessionId = String(req.body?.sessionId || '').trim();
-    const stripe = getStripe();
-    if (!sessionId || !stripe) return res.status(400).json({ error: 'No se puede verificar el pago de tarjeta todavía.' });
-
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const bookingId = String(session.metadata?.bookingId || session.client_reference_id || '').trim();
-    const booking = await getBookingById(bookingId);
-    const expectedCents = Math.round(Number(booking?.totalUSD || 0) * 100);
-    if (!booking || session.payment_status !== 'paid' || session.currency !== 'usd' || session.amount_total !== expectedCents) {
-      return res.status(409).json({ error: 'El pago no coincide con una reserva pendiente válida.' });
-    }
-
-    const result = await updateBookingStatus(bookingId, {
-      status: 'paid',
-      paymentStatus: 'completed',
-      paymentVerifiedAt: new Date().toISOString(),
-      paymentEvidence: { provider: 'stripe', sessionId: session.id, paymentIntent: session.payment_intent }
-    });
-    if (!result.success) return res.status(409).json(result);
-    return res.json({ success: true, booking: result.booking });
-  } catch (error: any) {
-    return res.status(502).json({ error: error.message || 'No se pudo verificar el pago de tarjeta.' });
-  }
+checkoutRouter.post('/api/payments/stripe/return', paymentLimiter, (_req, res) => {
+  res.status(410).json({ success: false, error: 'stripe_disabled_by_product_policy', code: STRIPE_DISABLED_REASON });
 });
 
 checkoutRouter.post('/api/payments/paypal/return', paymentLimiter, async (req, res) => {

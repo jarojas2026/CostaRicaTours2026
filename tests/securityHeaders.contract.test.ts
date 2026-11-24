@@ -45,14 +45,15 @@ test('CSP compatible con lo que ya usa el sitio', () => {
   has('connect-src', "'self'"); has('connect-src', 'https://*.googleapis.com'); has('connect-src', 'https://*.tile.openstreetmap.org'); has('connect-src', 'https://server.arcgisonline.com');
   has('script-src', 'https://apis.google.com'); has('frame-src', 'https://*.firebaseapp.com'); has('frame-src', 'https://maps.google.com');
   has('worker-src', 'blob:');
-  for (const host of ['https://checkout.stripe.com', 'https://www.paypal.com']) has('form-action', host);
+  has('form-action', 'https://www.paypal.com');
   // index.html: Leaflet CSS en unpkg y Google Fonts.
   const index = fs.readFileSync('index.html', 'utf8');
   assert.match(index, /https:\/\/unpkg\.com\/leaflet/);
   assert.match(index, /https:\/\/fonts\.googleapis\.com/);
   // Destinos de pago permitidos = los que valida el cliente antes de redirigir.
   const attempt = fs.readFileSync('src/utils/bookingAttempt.ts', 'utf8');
-  for (const host of ['checkout.stripe.com', 'www.paypal.com']) assert.ok(attempt.includes(host));
+  assert.ok(!attempt.includes('checkout.stripe.com'));
+  assert.ok(attempt.includes('www.paypal.com'));
 });
 
 /** Vercel no combina reglas con la misma clave: la última regla que coincide gana (#385). */

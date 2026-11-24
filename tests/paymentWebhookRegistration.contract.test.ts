@@ -11,6 +11,8 @@ test('signed payment webhook HTTP bridge is registered on the canonical Express 
   assert.match(server, /app\.post\('\/api\/webhooks\/paypal',\s*handlePayPalWebhook\)/);
 });
 
-test('Express captures raw request bytes before Stripe signature verification', () => {
-  assert.match(server, /express\.json\(\{[^}]*verify:\s*\(req,\s*_res,\s*buf\)[\s\S]*rawBody\s*=\s*Buffer\.from\(buf\)/);
+test('Stripe webhook handler is registered only as a retired fail-closed route', () => {
+  const handler = readFileSync('backend/paymentWebhookHttpService.ts', 'utf8');
+  assert.match(handler, /handleStripeWebhook[\s\S]*status\(410\)/);
+  assert.doesNotMatch(handler, /processStripeWebhook\(rawBody/);
 });

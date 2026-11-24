@@ -33,7 +33,7 @@ Estado: diseño + Fase 1 en curso (2026-10-19). Autor: agente "crt-admin".
   - `leads`: ventana 90 días por `createdAt` (consulta de un solo campo, sin índice compuesto), `perDay` (30 d, día CR), `perWeek` (12 sem), `kpis` (hoy/7d/30d), `funnel` (estado actual + "alcanzó" vía `statusHistory`), `byTour`, `byRegion`, `byLanguage`, `byCountry: null` (no se captura), `firstResponse` (mediana/p90 horas desde `createdAt` hasta la primera transición humana), `conversion` (de los que llegaron a `cotizando`, % que llegó a `confirmado_por_escrito`/`pagado`), `stale24h`, `heatmap` (día×hora CR), `triage`.
   - `ai`: proveedor configurado, estado por proveedor, breakers, fallos/latencia de llamadas observadas en esta instancia (ring buffer en memoria; `scope: instance`).
   - `catalog`: tours, regiones, operadores prospecto, URLs del sitemap.
-  - `finance`: `revenue: null` (Stripe en test → "próximamente"); tipo de cambio se lee de `/api/exchange-rate` existente en la UI.
+  - `finance`: `revenue: null` (sin pasarela de cobro en línea autorizada); tipo de cambio se lee de `/api/exchange-rate` existente en la UI.
 - `GET /api/admin/processes` (`backend/adminProcessRegistry.ts`): catálogo estático de procesos (id, departamento, tipo, horario) + último estado en `admin_processes/{id}` + últimas ejecuciones `admin_runs` + runs de GitHub Actions (API pública, caché 5 min).
 - `GET /api/admin/events`: auditoría `admin_events` (fallos de procesos, decisiones sobre propuestas, informes de agentes).
 - Heartbeat: `trackProcessRun(id, fn)` envuelve cada cron/endpoint interno. Escribe `admin_processes/{id}` (estado, inicio, fin, duración, error) y `admin_runs` solo para jobs de baja frecuencia o fallos; los jobs de cada minuto se escriben como máximo cada 15 min salvo cambio de estado (cuota Firestore).
@@ -46,7 +46,7 @@ Estado: diseño + Fase 1 en curso (2026-10-19). Autor: agente "crt-admin".
 | Ventas y Reservas | Agente de Ventas | leads, embudo, conversión, sin respuesta >24 h | digest, recuperación pre-venta |
 | Atención al Cliente | Agente de Atención | idiomas, salud IA del asistente | bandeja correo, customer-intake |
 | Operaciones y Proveedores | Agente de Operaciones | ICT/declaratoria pendiente de verificar, recordatorios | recordatorio proveedores 6 h, inbox, ciclo de reservas |
-| Finanzas | Agente de Finanzas | tipo de cambio BCCR; ingresos "próximamente" (Stripe test) | payouts (fail-closed) |
+| Finanzas | Agente de Finanzas | tipo de cambio BCCR; ingresos no disponibles (sin pasarela de cobro en línea autorizada) | payouts (fail-closed) |
 | Marketing y Contenido | Agente de Marketing | URLs sitemap; YouTube "no conectado" | refresh mapa (GitHub) |
 | Tecnología y Seguridad | Agente de Tecnología | /api/health, breakers, CI/deploys (GitHub Actions) | build-check, deploy |
 | Legal y Cumplimiento | Agente Legal | % leads con consentimiento Ley 8968, retención, SINAC-ESCNNA (página publicada) | — |

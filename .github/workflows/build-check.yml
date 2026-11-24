@@ -82,6 +82,4 @@ jobs:
           # falle por falta de claves reales. Esto NO despliega nada ni
           # usa dinero real — es solo para verificar que el código compila.
           GEMINI_API_KEY: "ci-dummy-key"
-          STRIPE_SECRET_KEY: "sk_test_dummy"
-          VITE_STRIPE_PUBLIC_KEY: "pk_test_dummy"
           VITE_GOOGLE_MAPS_API_KEY: "dummy-key"

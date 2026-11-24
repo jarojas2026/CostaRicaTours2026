@@ -19,13 +19,13 @@ const READINESS_ACTIONS: Record<string, { es: string; en: string }> = {
   publish_contractual_offer: { es: 'Publicar al menos una oferta con tarifa y horarios verificados.', en: 'Publish at least one offer with verified price and departure times.' },
   publish_future_inventory: { es: 'Registrar cupos futuros reales para las ofertas publicadas.', en: 'Register real future capacity for published offers.' },
   configure_real_email_transport: { es: 'Configurar SMTP, Resend o SendGrid y probar entrega real.', en: 'Configure SMTP, Resend or SendGrid and test actual delivery.' },
-  configure_payment_gateway: { es: 'Configurar pasarela de pago y verificar webhooks en sandbox.', en: 'Configure payment gateway and verify webhooks in sandbox.' },
+  configure_payment_gateway: { es: 'Evaluar y autorizar un proveedor de pago compatible antes de habilitar cobros.', en: 'Evaluate and explicitly approve a compatible payment provider before enabling charges.' },
   review_followup_policy_and_consent: { es: 'Revisar consentimiento y habilitación controlada del seguimiento de prospectos.', en: 'Review consent and controlled lead follow-up enablement.' },
 };
 type Readiness = {
   products: Product[]; providers: Provider[]; truncated: boolean;
   salesReadiness?: SalesReadiness;
-  payments: { paypalCredentialsConfigured: boolean; paypalMode: string; stripeCredentialsConfigured: boolean };
+  payments: { paypalCredentialsConfigured: boolean; paypalMode: string };
   voice: { ready: boolean; missing: string[]; humanTransferConfigured: boolean };
 };
 const inputStyle = 'mt-1 w-full rounded-xl border border-white/20 bg-stone-950 p-3 text-white';
@@ -83,7 +83,6 @@ export function CommerceOperationsPanel({ language }: { language: Language }) {
     <p className="text-sm text-stone-300">{es ? '1. Verifica al proveedor. 2. Publica tarifas y condiciones. 3. Abre cupos por fecha. Las solicitudes a medida siguen siendo cotizaciones hasta acordar su oferta.' : '1. Verify the provider. 2. Publish rates and terms. 3. Open dated inventory. Custom requests remain quotations until an offer is agreed.'}</p>
     {data && <div className="grid gap-3 sm:grid-cols-3 text-sm text-amber-200">
       <p>PayPal: {data.payments.paypalCredentialsConfigured ? data.payments.paypalMode : (es ? 'credenciales pendientes' : 'credentials pending')}</p>
-      <p>Stripe: {data.payments.stripeCredentialsConfigured ? (es ? 'credenciales presentes; probar cobro' : 'credentials present; payment test needed') : (es ? 'pendiente' : 'pending')}</p>
       <p>{es ? 'Voz: ' : 'Voice: '}{data.voice.ready ? (es ? 'configuración presente; falta prueba de llamada' : 'configuration present; call test needed') : (es ? 'configuración incompleta' : 'configuration incomplete')}</p>
     </div>}
     {data?.salesReadiness && <section aria-label={es ? 'Diagnóstico comercial' : 'Sales readiness'} className="rounded-2xl border border-amber-400/25 bg-black/20 p-4 space-y-3">
