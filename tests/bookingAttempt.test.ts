@@ -22,7 +22,7 @@ test('both tour forms require a persisted booking and guard payment redirects', 
     const source = fs.readFileSync(file, 'utf8');
     assert.match(source, /!bookingData\.booking\?\.bookingId/);
     assert.match(source, /Idempotency-Key/);
-    assert.match(source, /requirePaymentUrl\(stripeData.url\)/);
+    assert.doesNotMatch(source, /stripeData|checkout\.stripe\.com|create-checkout-session/i);
     assert.match(source, /requirePaymentUrl\(paypalData.url\)/);
     assert.doesNotMatch(source, /status:.*confirmada/);
   }
